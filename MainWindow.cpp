@@ -33,9 +33,14 @@ void MainWindow::InitializeUi()
     ///////////////////////////////////////////////////////////
 
     addVideoButton = new QPushButton("添加");
+
     deleteVideoButton = new QPushButton("删除");
+    deleteVideoButton->setDisabled(true);
+
     playOrStopButton = new QPushButton("开始/暂停");
+
     volumeButton = new QPushButton("静音");
+
     volumeSlider = new QSlider(Qt::Horizontal);
     volumeSlider->setRange(0, 100);
     volumeSlider->setTickInterval(1);
@@ -97,7 +102,7 @@ void MainWindow::InitializeConnect()
                 {
                     // 解决对于路径Qt使用/而libvlc只认本地规则（即\\）的问题，path即为转换后的路径
                     // 注意不要连写path = toStdString().c_str()，当心变量生命周期
-                    auto path = QDir::toNativeSeparators(r).toStdString();  
+                    const auto path = QDir::toNativeSeparators(r).toStdString();  
                     auto *videoPath = libvlc_media_new_path(vlcInstance, path.c_str());
                     videoListWidget->addItem(path.c_str());
 
@@ -162,6 +167,23 @@ void MainWindow::InitializeConnect()
                 // 暂不支持“随机播放”
             }
         });
+
+    // 删除按钮
+    connect(deleteVideoButton, &QPushButton::clicked, [=]()
+        {
+            const auto index = videoListWidget->currentRow();
+            delete videoListWidget->takeItem(index);    // takeItem返回的指针需要手动释放
+
+            libvlc_media_list_lock(videoList);
+            libvlc_media_list_remove_index(videoList, index);
+            libvlc_media_list_unlock(videoList);
+        });
+
+    // 只有点击过播放列表中的项目才允许删除，防止误触
+    connect(videoListWidget, &QListWidget::itemClicked, [=]()
+        {
+            deleteVideoButton->setEnabled(true);
+        });
 }
 
 HWND MainWindow::GetDesktopHwnd() const noexcept
@@ -175,8 +197,7 @@ HWND MainWindow::GetDesktopHwnd() const noexcept
         hWndWorkW = FindWindowEx(nullptr, hWndWorkW, L"WorkerW", nullptr);
         if (hWndWorkW)
         {
-            auto hView = FindWindowEx(hWndWorkW, nullptr, L"SHELLDLL_DefView", nullptr);
-            if (hView)
+            if (FindWindowEx(hWndWorkW, nullptr, L"SHELLDLL_DefView", nullptr))
             {
                 auto h = FindWindowEx(nullptr, hWndWorkW, L"WorkerW", nullptr);
                 while (h)
