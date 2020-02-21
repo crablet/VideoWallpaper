@@ -19,13 +19,13 @@ void MainWindow::InitializeUi()
     modeComboBox = new QComboBox;
     modeComboBox->addItems({ "不循环", "列表循环", "单曲循环", "随机播放" });
 
-    startOnBootCheckBox = new QCheckBox("开机启动");
+    runAtStartupCheckBox = new QCheckBox("开机启动");
 
     modeSettingsLayout = new QHBoxLayout(this);
     modeSettingsLayout->addWidget(modeLabel);
     modeSettingsLayout->addWidget(modeComboBox);
     modeSettingsLayout->addStretch();
-    modeSettingsLayout->addWidget(startOnBootCheckBox);
+    modeSettingsLayout->addWidget(runAtStartupCheckBox);
 
     modeSettingsWidget = new QWidget(this);
     modeSettingsWidget->setLayout(modeSettingsLayout);
@@ -183,6 +183,24 @@ void MainWindow::InitializeConnect()
     connect(videoListWidget, &QListWidget::itemClicked, [=]()
         {
             deleteVideoButton->setEnabled(true);
+        });
+
+    // 注册是否开机启动
+    connect(runAtStartupCheckBox, &QCheckBox::stateChanged, [=](int state)
+        {
+            QSettings
+                Reg(R"(HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run)",
+                    QSettings::NativeFormat);
+            if (state == Qt::Checked)
+            {
+                // 给后面的值加上双引号是为了符合Windows默认的规范
+                Reg.setValue("VideoWallpaper",
+                             "\"" + QDir::toNativeSeparators(QCoreApplication::applicationFilePath()) + "\"");
+            }
+            else
+            {
+                Reg.remove("VideoWallpaper");
+            }
         });
 }
 

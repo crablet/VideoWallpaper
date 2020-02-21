@@ -14,6 +14,8 @@
 #include <QFileDialog>
 #include <QDir>
 #include <QtGlobal>
+#include <QSettings>
+#include <QCoreApplication>
 
 #include <vlc/vlc.h>
 
@@ -44,7 +46,7 @@ private:
 
     QComboBox *modeComboBox;
     QLabel *modeLabel;
-    QCheckBox *startOnBootCheckBox;
+    QCheckBox *runAtStartupCheckBox;
     QPushButton *volumeButton, *addVideoButton, *deleteVideoButton, *playOrStopButton;
     QSlider *volumeSlider;
 
