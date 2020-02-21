@@ -45,6 +45,9 @@ private:
 
     void closeEvent(QCloseEvent *event) override;
 
+signals:
+    void VideoListCountChanged(int count);  // 当列表控件中的项目个数发生变化时会触发此信号，处理函数可以用来控制按钮的可使用性等等
+
 private:
     QVBoxLayout *mainLayout;
     QHBoxLayout *modeSettingsLayout, *videoControlLayout;
@@ -54,7 +57,8 @@ private:
     QComboBox *modeComboBox;
     QLabel *modeLabel;
     QCheckBox *runAtStartupCheckBox;
-    QPushButton *volumeButton, *addVideoButton, *deleteVideoButton, *playOrStopButton;
+    QPushButton *volumeButton, *addVideoButton, *deleteVideoButton;
+    QPushButton *playOrStopButton, *playNextButton, *stopPlayingButton, *playPreviousButton;
     QSlider *volumeSlider;
 
     QSystemTrayIcon *tray;

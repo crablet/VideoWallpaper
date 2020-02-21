@@ -38,6 +38,16 @@ void MainWindow::InitializeUi()
     deleteVideoButton->setDisabled(true);
 
     playOrStopButton = new QPushButton("开始/暂停");
+    playOrStopButton->setDisabled(true);
+
+    playPreviousButton = new QPushButton("上一个");
+    playPreviousButton->setDisabled(true);
+
+    stopPlayingButton = new QPushButton("停止");
+    stopPlayingButton->setDisabled(true);
+
+    playNextButton = new QPushButton("下一个");
+    playNextButton->setDisabled(true);
 
     volumeButton = new QPushButton("静音");
 
@@ -46,12 +56,15 @@ void MainWindow::InitializeUi()
     volumeSlider->setTickInterval(1);
 
     videoControlLayout = new QHBoxLayout(this);
-    videoControlLayout->addWidget(addVideoButton);
-    videoControlLayout->addWidget(deleteVideoButton);
-    videoControlLayout->addWidget(playOrStopButton);
-    videoControlLayout->addStretch();
-    videoControlLayout->addWidget(volumeButton);
-    videoControlLayout->addWidget(volumeSlider);
+    videoControlLayout->addWidget(addVideoButton);      // 添加
+    videoControlLayout->addWidget(deleteVideoButton);   // 删除
+    videoControlLayout->addWidget(playOrStopButton);    // 开始/暂停
+    videoControlLayout->addWidget(playPreviousButton);  // 上一个
+    videoControlLayout->addWidget(stopPlayingButton);   // 停止
+    videoControlLayout->addWidget(playNextButton);      // 下一个
+    videoControlLayout->addStretch();                   // 中间弹性留白
+    videoControlLayout->addWidget(volumeButton);        // 静音
+    videoControlLayout->addWidget(volumeSlider);        // 音量条
 
     videoControlWidget = new QWidget(this);
     videoControlWidget->setLayout(videoControlLayout);
@@ -115,20 +128,29 @@ void MainWindow::InitializeConnect()
             auto fileNames = QFileDialog::getOpenFileNames(this, "选择媒体文件");
             if (!fileNames.empty())
             {
-                for (const auto &r : fileNames)
+                for (const auto &fileName : fileNames)
                 {
                     // 解决对于路径Qt使用/而libvlc只认本地规则（即\\）的问题，path即为转换后的路径
-                    // 注意不要连写path = toStdString().c_str()，当心变量生命周期
-                    const auto path = QDir::toNativeSeparators(r).toStdString();  
-                    auto *videoPath = libvlc_media_new_path(vlcInstance, path.c_str());
-                    videoListWidget->addItem(path.c_str());
+                    const auto path = QDir::toNativeSeparators(fileName);
 
-                    libvlc_media_list_lock(videoList);
-                    libvlc_media_list_add_media(videoList, videoPath);
-                    libvlc_media_list_unlock(videoList);
+                    // 当列表中没有重复项时才允许添加进去，这里做了个去重
+                    if (videoListWidget->findItems(path, Qt::MatchFixedString | Qt::MatchCaseSensitive).empty())
+                    {
+                        // 先转为std::string，然后再使用c_str()取得const char*
+                        // 注意不要连写path = toStdString().c_str()，当心变量生命周期
+                        const auto stdStringPath = path.toStdString();
+                        auto *videoPath = libvlc_media_new_path(vlcInstance, stdStringPath.c_str());
+                        videoListWidget->addItem(path);
 
-                    libvlc_media_release(videoPath);
+                        libvlc_media_list_lock(videoList);
+                        libvlc_media_list_add_media(videoList, videoPath);
+                        libvlc_media_list_unlock(videoList);
+
+                        libvlc_media_release(videoPath);
+                    }
                 }
+
+                emit VideoListCountChanged(videoListWidget->count());
             }
         }
     );
@@ -194,6 +216,8 @@ void MainWindow::InitializeConnect()
             libvlc_media_list_lock(videoList);
             libvlc_media_list_remove_index(videoList, index);
             libvlc_media_list_unlock(videoList);
+
+            emit VideoListCountChanged(videoListWidget->count());
         });
 
     // 只有点击过播放列表中的项目才允许删除，防止误触
@@ -229,6 +253,25 @@ void MainWindow::InitializeConnect()
             }
         }
     );
+
+    // 当列表项变化之时应该做的处理
+    connect(this, &MainWindow::VideoListCountChanged, [=](int count)
+        {
+            if (count)  // 有媒体可以播放，于是这些按钮变为可用
+            {
+                deleteVideoButton->setEnabled(true);
+                playPreviousButton->setEnabled(true);
+                stopPlayingButton->setEnabled(true);
+                playNextButton->setEnabled(true);
+            }
+            else        // 没有媒体可以播放，于是这些按钮变为不可用
+            {
+                deleteVideoButton->setDisabled(true);
+                playPreviousButton->setDisabled(true);
+                stopPlayingButton->setDisabled(true);
+                playNextButton->setDisabled(true);
+            }
+        });
 }
 
 HWND MainWindow::GetDesktopHwnd() const noexcept
