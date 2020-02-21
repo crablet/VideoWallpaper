@@ -68,6 +68,23 @@ void MainWindow::InitializeUi()
     mainLayout->addWidget(videoListWidget);
 
     setLayout(mainLayout);
+
+    ///////////////////////////////////////////////////////////
+
+    auto *exitAction = new QAction("退出", this);
+    connect(exitAction, &QAction::triggered, [=]()
+        {
+            qApp->quit();
+        }
+    );
+
+    auto *trayMenu = new QMenu(this);
+    trayMenu->addAction(exitAction);
+
+    tray = new QSystemTrayIcon(this);
+    tray->setContextMenu(trayMenu);
+    tray->setIcon(QIcon(R"(C:\Users\crabl\Desktop\robort.png)"));
+    tray->show();
 }
 
 void MainWindow::InitializeLibVlc()
@@ -202,6 +219,16 @@ void MainWindow::InitializeConnect()
                 Reg.remove("VideoWallpaper");
             }
         });
+
+    // 来自托盘的信号的处理
+    connect(tray, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason)
+        {
+            if (reason == QSystemTrayIcon::Trigger) // 单击即显示窗口
+            {
+                this->showNormal();
+            }
+        }
+    );
 }
 
 HWND MainWindow::GetDesktopHwnd() const noexcept
@@ -230,4 +257,11 @@ HWND MainWindow::GetDesktopHwnd() const noexcept
     } while (true);
 
     return hWnd;
+}
+
+// 点击窗体右上角关闭按钮不立即关闭，而是转入后台运行，符合用户习惯，后续可以加上选项
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    event->ignore();
+    this->hide();
 }

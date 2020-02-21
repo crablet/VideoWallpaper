@@ -16,6 +16,11 @@
 #include <QtGlobal>
 #include <QSettings>
 #include <QCoreApplication>
+#include <QSystemTrayIcon>
+#include <QIcon>
+#include <QMenu>
+#include <QAction>
+#include <QCloseEvent>
 
 #include <vlc/vlc.h>
 
@@ -38,6 +43,8 @@ private:
 
     HWND GetDesktopHwnd() const noexcept;
 
+    void closeEvent(QCloseEvent *event) override;
+
 private:
     QVBoxLayout *mainLayout;
     QHBoxLayout *modeSettingsLayout, *videoControlLayout;
@@ -49,6 +56,8 @@ private:
     QCheckBox *runAtStartupCheckBox;
     QPushButton *volumeButton, *addVideoButton, *deleteVideoButton, *playOrStopButton;
     QSlider *volumeSlider;
+
+    QSystemTrayIcon *tray;
 
     libvlc_instance_t *vlcInstance;
     libvlc_media_list_t *videoList;
