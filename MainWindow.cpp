@@ -86,10 +86,9 @@ void MainWindow::InitializeUi()
 
     auto *exitAction = new QAction("退出", this);
     connect(exitAction, &QAction::triggered, [=]()
-        {
-            qApp->quit();
-        }
-    );
+    {
+        qApp->quit();
+    });
 
     auto *trayMenu = new QMenu(this);
     trayMenu->addAction(exitAction);
@@ -124,154 +123,151 @@ void MainWindow::InitializeConnect()
 {
     // 添加视频
     connect(addVideoButton, &QPushButton::clicked, [=]()
+    {
+        auto fileNames = QFileDialog::getOpenFileNames(this, "选择媒体文件");
+        if (!fileNames.empty())
         {
-            auto fileNames = QFileDialog::getOpenFileNames(this, "选择媒体文件");
-            if (!fileNames.empty())
+            for (const auto &fileName : fileNames)
             {
-                for (const auto &fileName : fileNames)
+                // 解决对于路径Qt使用/而libvlc只认本地规则（即\\）的问题，path即为转换后的路径
+                const auto path = QDir::toNativeSeparators(fileName);
+
+                // 当列表中没有重复项时才允许添加进去，这里做了个去重
+                if (videoListWidget->findItems(path, Qt::MatchFixedString | Qt::MatchCaseSensitive).empty())
                 {
-                    // 解决对于路径Qt使用/而libvlc只认本地规则（即\\）的问题，path即为转换后的路径
-                    const auto path = QDir::toNativeSeparators(fileName);
+                    // 先转为std::string，然后再使用c_str()取得const char*
+                    // 注意不要连写path = toStdString().c_str()，当心变量生命周期
+                    const auto stdStringPath = path.toStdString();
+                    auto *videoPath = libvlc_media_new_path(vlcInstance, stdStringPath.c_str());
+                    videoListWidget->addItem(path);
 
-                    // 当列表中没有重复项时才允许添加进去，这里做了个去重
-                    if (videoListWidget->findItems(path, Qt::MatchFixedString | Qt::MatchCaseSensitive).empty())
-                    {
-                        // 先转为std::string，然后再使用c_str()取得const char*
-                        // 注意不要连写path = toStdString().c_str()，当心变量生命周期
-                        const auto stdStringPath = path.toStdString();
-                        auto *videoPath = libvlc_media_new_path(vlcInstance, stdStringPath.c_str());
-                        videoListWidget->addItem(path);
+                    libvlc_media_list_lock(videoList);
+                    libvlc_media_list_add_media(videoList, videoPath);
+                    libvlc_media_list_unlock(videoList);
 
-                        libvlc_media_list_lock(videoList);
-                        libvlc_media_list_add_media(videoList, videoPath);
-                        libvlc_media_list_unlock(videoList);
-
-                        libvlc_media_release(videoPath);
-                    }
+                    libvlc_media_release(videoPath);
                 }
-
-                emit VideoListCountChanged(videoListWidget->count());
             }
+
+            emit VideoListCountChanged(videoListWidget->count());
         }
-    );
+    });
 
     // 播放/暂停视频
     connect(playOrStopButton, &QPushButton::clicked, [=]()
+    {
+        if (!libvlc_media_list_player_is_playing(videoPlayer))  // 连第一遍播放都还没开始的，先让其播放
         {
-            if (!libvlc_media_list_player_is_playing(videoPlayer))  // 连第一遍播放都还没开始的，先让其播放
-            {
-                libvlc_media_list_player_play(videoPlayer);
-            }
-            else // 已经开始播放的
-            {
-                // 根据文档，只需要调用这个函数就好，它会自动判断该暂停播放还是恢复播放
-                libvlc_media_list_player_pause(videoPlayer);
-            }
+            libvlc_media_list_player_play(videoPlayer);
         }
-    );
+        else // 已经开始播放的
+        {
+            // 根据文档，只需要调用这个函数就好，它会自动判断该暂停播放还是恢复播放
+            libvlc_media_list_player_pause(videoPlayer);
+        }
+    });
 
     // 静音按钮
     connect(volumeButton, &QPushButton::clicked, [=]()
-        {
-            auto *player = libvlc_media_list_player_get_media_player(videoPlayer);
-            libvlc_audio_set_mute(player, !libvlc_audio_get_mute(player));
-            libvlc_media_player_release(player);
-        });
+    {
+        auto *player = libvlc_media_list_player_get_media_player(videoPlayer);
+        libvlc_audio_set_mute(player, !libvlc_audio_get_mute(player));
+        libvlc_media_player_release(player);
+    });
 
     // 音量条
     connect(volumeSlider, &QSlider::sliderMoved, [=](int value)
-        {
-            auto *player = libvlc_media_list_player_get_media_player(videoPlayer);
-            libvlc_audio_set_volume(player, value);
-            libvlc_media_player_release(player);
-        });
+    {
+        auto *player = libvlc_media_list_player_get_media_player(videoPlayer);
+        libvlc_audio_set_volume(player, value);
+        libvlc_media_player_release(player);
+    });
 
     // 选择列表循环播放的模式
     connect(modeComboBox, QOverload<const QString&>::of(&QComboBox::currentIndexChanged), [=](const QString &currentText)
+    {
+        if (currentText == "单曲循环")
         {
-            if (currentText == "单曲循环")
-            {
-                libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_repeat);
-            }
-            else if (currentText == "列表循环")
-            {
-                libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_loop);
-            }
-            else if (currentText == "不循环")
-            {
-                libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_default);
-            }
-            else
-            {
-                // 暂不支持“随机播放”
-            }
-        });
+            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_repeat);
+        }
+        else if (currentText == "列表循环")
+        {
+            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_loop);
+        }
+        else if (currentText == "不循环")
+        {
+            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_default);
+        }
+        else
+        {
+            // 暂不支持“随机播放”
+        }
+    });
 
     // 删除按钮
     connect(deleteVideoButton, &QPushButton::clicked, [=]()
-        {
-            const auto index = videoListWidget->currentRow();
-            delete videoListWidget->takeItem(index);    // takeItem返回的指针需要手动释放
+    {
+        const auto index = videoListWidget->currentRow();
+        delete videoListWidget->takeItem(index);    // takeItem返回的指针需要手动释放
 
-            libvlc_media_list_lock(videoList);
-            libvlc_media_list_remove_index(videoList, index);
-            libvlc_media_list_unlock(videoList);
+        libvlc_media_list_lock(videoList);
+        libvlc_media_list_remove_index(videoList, index);
+        libvlc_media_list_unlock(videoList);
 
-            emit VideoListCountChanged(videoListWidget->count());
-        });
+        emit VideoListCountChanged(videoListWidget->count());
+    });
 
     // 只有点击过播放列表中的项目才允许删除，防止误触
     connect(videoListWidget, &QListWidget::itemClicked, [=]()
-        {
-            deleteVideoButton->setEnabled(true);
-        });
+    {
+        deleteVideoButton->setEnabled(true);
+    });
 
     // 注册是否开机启动
     connect(runAtStartupCheckBox, &QCheckBox::stateChanged, [=](int state)
+    {
+        QSettings
+            Reg(R"(HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run)",
+                QSettings::NativeFormat);
+        if (state == Qt::Checked)
         {
-            QSettings
-                Reg(R"(HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run)",
-                    QSettings::NativeFormat);
-            if (state == Qt::Checked)
-            {
-                // 给后面的值加上双引号是为了符合Windows默认的规范
-                Reg.setValue("VideoWallpaper",
-                             "\"" + QDir::toNativeSeparators(QCoreApplication::applicationFilePath()) + "\"");
-            }
-            else
-            {
-                Reg.remove("VideoWallpaper");
-            }
-        });
+            // 给后面的值加上双引号是为了符合Windows默认的规范
+            Reg.setValue("VideoWallpaper",
+                            "\"" + QDir::toNativeSeparators(QCoreApplication::applicationFilePath()) + "\"");
+        }
+        else
+        {
+            Reg.remove("VideoWallpaper");
+        }
+    });
 
     // 来自托盘的信号的处理
     connect(tray, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason)
+    {
+        if (reason == QSystemTrayIcon::Trigger) // 单击即显示窗口
         {
-            if (reason == QSystemTrayIcon::Trigger) // 单击即显示窗口
-            {
-                this->showNormal();
-            }
+            this->showNormal();
         }
-    );
+    });
 
     // 当列表项变化之时应该做的处理
     connect(this, &MainWindow::VideoListCountChanged, [=](int count)
+    {
+        if (count)  // 有媒体可以播放，于是这些按钮变为可用
         {
-            if (count)  // 有媒体可以播放，于是这些按钮变为可用
-            {
-                deleteVideoButton->setEnabled(true);
-                playPreviousButton->setEnabled(true);
-                stopPlayingButton->setEnabled(true);
-                playNextButton->setEnabled(true);
-            }
-            else        // 没有媒体可以播放，于是这些按钮变为不可用
-            {
-                deleteVideoButton->setDisabled(true);
-                playPreviousButton->setDisabled(true);
-                stopPlayingButton->setDisabled(true);
-                playNextButton->setDisabled(true);
-            }
-        });
+            deleteVideoButton->setEnabled(true);
+            playPreviousButton->setEnabled(true);
+            stopPlayingButton->setEnabled(true);
+            playNextButton->setEnabled(true);
+        }
+        else        // 没有媒体可以播放，于是这些按钮变为不可用
+        {
+            deleteVideoButton->setDisabled(true);
+            playPreviousButton->setDisabled(true);
+            stopPlayingButton->setDisabled(true);
+            playNextButton->setDisabled(true);
+        }
+    });
 }
 
 HWND MainWindow::GetDesktopHwnd() const noexcept
