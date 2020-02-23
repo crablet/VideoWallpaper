@@ -95,7 +95,7 @@ void MainWindow::InitializeUi()
 
     tray = new QSystemTrayIcon(this);
     tray->setContextMenu(trayMenu);
-    tray->setIcon(QIcon(R"(C:\Users\crabl\Desktop\robort.png)"));
+    tray->setIcon(QIcon(R"(:/icons/robort.png)"));
     tray->show();
 }
 
@@ -165,6 +165,24 @@ void MainWindow::InitializeConnect()
             // 根据文档，只需要调用这个函数就好，它会自动判断该暂停播放还是恢复播放
             libvlc_media_list_player_pause(videoPlayer);
         }
+    });
+
+    // 播放上一个
+    connect(playPreviousButton, &QPushButton::clicked, [=]()
+    {
+        libvlc_media_list_player_previous(videoPlayer);
+    });
+
+    // 播放下一个
+    connect(playNextButton, &QPushButton::clicked, [=]()
+    {
+        libvlc_media_list_player_next(videoPlayer);
+    });
+
+    // 停止播放
+    connect(stopPlayingButton, &QPushButton::clicked, [=]()
+    {
+        libvlc_media_list_player_stop(videoPlayer);
     });
 
     // 静音按钮
@@ -255,6 +273,7 @@ void MainWindow::InitializeConnect()
     {
         if (count)  // 有媒体可以播放，于是这些按钮变为可用
         {
+            playOrStopButton->setEnabled(true);
             deleteVideoButton->setEnabled(true);
             playPreviousButton->setEnabled(true);
             stopPlayingButton->setEnabled(true);
@@ -262,6 +281,7 @@ void MainWindow::InitializeConnect()
         }
         else        // 没有媒体可以播放，于是这些按钮变为不可用
         {
+            playOrStopButton->setDisabled(true);
             deleteVideoButton->setDisabled(true);
             playPreviousButton->setDisabled(true);
             stopPlayingButton->setDisabled(true);
