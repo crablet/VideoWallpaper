@@ -3,9 +3,10 @@
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
 {
-    InitializeUi();
-    InitializeLibVlc();
-    InitializeConnect();
+    InitializeUi();         // 初始化UI
+    InitializeLibVlc();     // 初始化libvlc
+    InitializeConnect();    // 初始化信号/槽
+    InitializeSettings();   // 根据配置文件做正式运行前最后的设置
 }
 
 MainWindow::~MainWindow()
@@ -99,6 +100,60 @@ void MainWindow::InitializeUi()
     tray->show();
 }
 
+void MainWindow::InitializeSettings()
+{
+    QDir dirChecker;
+    if (!dirChecker.exists("userdata")) // 确保userdata文件夹存在，以后可以换成std::filesystem
+    {
+        dirChecker.mkdir("userdata");
+    }
+
+    settings = new QSettings("userdata/config.ini", QSettings::IniFormat, this);
+
+    // 开机启动
+    if (!settings->contains("RunAtStartup"))    // 如果不存在RunAtStartup，可能是首次运行，则做默认初始化
+    {
+        settings->setValue("RunAtStartup", false);  // 默认不进行开机启动
+    }
+    else    // 存在RunAtStartup配置，则根据配置情况执行
+    {
+        SetRunAtStartup(settings->value("RunAtStartup").toBool());  // 根据配置文件设置是否开机启动
+    }
+
+    // 列表播放模式
+    if (!settings->contains("PlaybackMode"))    // 如果不存在PlaybackMode，可能是首次运行，则做默认初始化
+    {
+        settings->setValue("PlaybackMode", "default");  // 默认为“不循环”，即libvlc_playback_mode_default
+        modeComboBox->setCurrentText("不循环");
+    }
+    else    // 存在PlaybackMode配置，则根据配置情况执行
+    {
+        auto playbackMode = settings->value("PlaybackMode").toString();
+        if (playbackMode == "repeat")
+        {
+            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_repeat);
+            modeComboBox->setCurrentText("单曲循环");
+        }
+        else if (playbackMode == "loop")
+        {
+            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_loop);
+            modeComboBox->setCurrentText("列表循环");
+        }
+        else if (playbackMode == "default")
+        {
+            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_default);
+            modeComboBox->setCurrentText("不循环");
+        }
+        else
+        {
+            // 暂不支持“随机播放”
+            modeComboBox->setCurrentText("随机播放");
+        }
+
+        // 以上一大段和modeComboBox的信号处理函数重合很大，不太好，需要改进
+    }
+}
+
 void MainWindow::InitializeLibVlc()
 {
     vlcInstance = libvlc_new(0, nullptr);
@@ -112,7 +167,7 @@ void MainWindow::InitializeLibVlc()
     libvlc_media_player_release(innerPlayer);
 }
 
-void MainWindow::DestoryLibVlc()
+void MainWindow::DestoryLibVlc() noexcept
 {
     libvlc_media_list_player_release(videoPlayer);
     libvlc_media_list_release(videoList);
@@ -207,14 +262,17 @@ void MainWindow::InitializeConnect()
         if (currentText == "单曲循环")
         {
             libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_repeat);
+            settings->setValue("PlaybackMode", "repeat");
         }
         else if (currentText == "列表循环")
         {
             libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_loop);
+            settings->setValue("PlaybackMode", "loop");
         }
         else if (currentText == "不循环")
         {
             libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_default);
+            settings->setValue("PlaybackMode", "default");
         }
         else
         {
@@ -244,19 +302,9 @@ void MainWindow::InitializeConnect()
     // 注册是否开机启动
     connect(runAtStartupCheckBox, &QCheckBox::stateChanged, [=](int state)
     {
-        QSettings
-            Reg(R"(HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run)",
-                QSettings::NativeFormat);
-        if (state == Qt::Checked)
-        {
-            // 给后面的值加上双引号是为了符合Windows默认的规范
-            Reg.setValue("VideoWallpaper",
-                            "\"" + QDir::toNativeSeparators(QCoreApplication::applicationFilePath()) + "\"");
-        }
-        else
-        {
-            Reg.remove("VideoWallpaper");
-        }
+        // 勾选此框 -> Qt::Checked -> 设置开机启动
+        // 否则同理
+        SetRunAtStartup(state == Qt::Checked);
     });
 
     // 来自托盘的信号的处理
@@ -290,10 +338,17 @@ void MainWindow::InitializeConnect()
     });
 }
 
+// 点击窗体右上角关闭按钮不立即关闭，而是转入后台运行，符合用户习惯，后续可以加上选项
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    event->ignore();
+    this->hide();
+}
+
 HWND MainWindow::GetDesktopHwnd() const noexcept
 {
     auto hWnd = FindWindow(L"Progman", L"Program Manager");
-    SendMessageTimeout(hWnd, 0x52C, 0, 0, SMTO_NORMAL, 1000, nullptr);	// can the last param be nullptr?
+    SendMessageTimeout(hWnd, 0x52C, 0, 0, SMTO_NORMAL, 1000, nullptr);	// 不知道是否可以为空指针
 
     HWND hWndWorkW = nullptr;
     do
@@ -318,9 +373,25 @@ HWND MainWindow::GetDesktopHwnd() const noexcept
     return hWnd;
 }
 
-// 点击窗体右上角关闭按钮不立即关闭，而是转入后台运行，符合用户习惯，后续可以加上选项
-void MainWindow::closeEvent(QCloseEvent *event)
+// 设置是否开机启动
+// doSetting: true -> 开机启动，false -> 开机不启动
+void MainWindow::SetRunAtStartup(bool doSetting) const noexcept
 {
-    event->ignore();
-    this->hide();
+    QSettings
+        Reg(R"(HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run)",
+            QSettings::NativeFormat);
+    if (doSetting)
+    {
+        // 给后面的值加上双引号是为了符合Windows默认的规范
+        Reg.setValue("VideoWallpaper",
+                     "\"" + QDir::toNativeSeparators(QCoreApplication::applicationFilePath()) + "\"");
+        settings->setValue("RunAtStartup", true);
+    }
+    else
+    {
+        Reg.remove("VideoWallpaper");
+        settings->setValue("RunAtStartup", false);
+    }
+
+    runAtStartupCheckBox->setChecked(doSetting);    // 更新一下复选框的勾选状态
 }

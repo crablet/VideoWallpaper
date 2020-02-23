@@ -36,12 +36,17 @@ public:
 
 private:
     void InitializeUi();
+    void InitializeSettings();
     void InitializeLibVlc();
     void InitializeConnect();
 
-    void DestoryLibVlc();
+    void DestoryLibVlc() noexcept;
 
     HWND GetDesktopHwnd() const noexcept;
+
+    // 设置是否开机启动
+    // doSetting: true -> 开机启动，false -> 开机不启动
+    void SetRunAtStartup(bool doSetting) const noexcept;
 
     void closeEvent(QCloseEvent *event) override;
 
@@ -62,6 +67,8 @@ private:
     QSlider *volumeSlider;
 
     QSystemTrayIcon *tray;
+
+    QSettings *settings;
 
     libvlc_instance_t *vlcInstance;
     libvlc_media_list_t *videoList;
