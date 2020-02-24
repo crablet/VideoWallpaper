@@ -26,6 +26,8 @@
 
 #include <Windows.h>
 
+#include "OnExitDialog.h"
+
 class MainWindow : public QWidget
 {
     Q_OBJECT

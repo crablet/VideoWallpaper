@@ -338,11 +338,61 @@ void MainWindow::InitializeConnect()
     });
 }
 
-// 点击窗体右上角关闭按钮不立即关闭，而是转入后台运行，符合用户习惯，后续可以加上选项
+// 点击窗体右上角关闭按钮时会触发的事件，若已有配置则根据配置执行，若没有配置则弹框询问动作
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    event->ignore();
-    this->hide();
+    if (settings->contains("CloseClickedAction"))   // 如果已经写入了配置文件，则根据配置文件来决定行为
+    {
+        const auto action = settings->value("CloseClickedAction").toString();
+        if (action == "background")
+        {
+            event->ignore();
+            this->hide();
+        }
+        else if (action == "exit")
+        {
+            qApp->quit();
+        }
+        else
+        {
+            // 配置文件出错
+        }
+    }
+    else    // 还没写配置文件，则弹框询问
+    {
+        OnExitDialog dialog;
+        const auto result = dialog.exec();
+        if (result == OnExitDialog::BackgroundWithoutSaving)    // 后台运行且不保存配置
+        {
+            event->ignore();
+            this->hide();
+        }
+        else if (result == OnExitDialog::BackgroundAndSave)     // 后台运行且保存配置
+        {
+            event->ignore();
+            this->hide();
+
+            settings->setValue("CloseClickedAction", "background");
+        }
+        else if (result == OnExitDialog::ExitWithoutSaving)     // 直接退出且不保存配置
+        {
+            qApp->quit();
+        }
+        else if (result == OnExitDialog::ExitAndSave)           // 直接退出且保存配置
+        {
+            qApp->quit();
+
+            settings->setValue("CloseClickedAction", "exit");
+        }
+        else if (result == OnExitDialog::Cancel)                // 取消操作
+        {
+            event->ignore();    // 取消关闭窗口的操作
+        }
+        else
+        {
+            // 配置文件出错
+        }
+    }
 }
 
 HWND MainWindow::GetDesktopHwnd() const noexcept
