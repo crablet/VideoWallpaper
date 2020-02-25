@@ -8,6 +8,10 @@ OnExitDialog::OnExitDialog(QWidget *parent) : QDialog(parent)
 
 void OnExitDialog::InitializeUi()
 {
+	setWindowIcon(QIcon(":/icons/film-fill.png"));
+
+	////////////////////////////////////////////////////////
+
 	saveConfigCheckbox = new QCheckBox("记住我的选择", this);
 
 	////////////////////////////////////////////////////////

@@ -16,6 +16,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::InitializeUi()
 {
+    setWindowIcon(QIcon(":/icons/film-fill.png"));
+
+    ///////////////////////////////////////////////////////////
+
     modeLabel = new QLabel("模式：");
     modeComboBox = new QComboBox;
     modeComboBox->addItems({ "不循环", "列表循环", "单曲循环", "随机播放" });
@@ -117,7 +121,7 @@ void MainWindow::InitializeUi()
 
     tray = new QSystemTrayIcon(this);
     tray->setContextMenu(trayMenu);
-    tray->setIcon(QIcon(R"(:/icons/robort.png)"));
+    tray->setIcon(QIcon(R"(:/icons/film-fill.png)"));
     tray->show();
 }
 
