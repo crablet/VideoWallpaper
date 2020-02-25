@@ -1,5 +1,14 @@
 <RCC>
     <qresource prefix="/">
-        <file>icons/robort.png</file>
+        <file>icons/pause-fill.png</file>
+        <file>icons/play-fill.png</file>
+        <file>icons/play-list-add-fill.png</file>
+        <file>icons/play-list-fill.png</file>
+        <file>icons/skip-back-fill.png</file>
+        <file>icons/skip-forward-fill.png</file>
+        <file>icons/stop-fill.png</file>
+        <file>icons/volume-down-fill.png</file>
+        <file>icons/volume-mute-fill.png</file>
+        <file>icons/volume-up-fill.png</file>
     </qresource>
 </RCC>

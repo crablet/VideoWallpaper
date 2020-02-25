@@ -33,24 +33,45 @@ void MainWindow::InitializeUi()
 
     ///////////////////////////////////////////////////////////
 
-    addVideoButton = new QPushButton("添加");
-
-    deleteVideoButton = new QPushButton("删除");
+    addVideoButton = new QToolButton;
+    addVideoButton->setIcon(QIcon(":/icons/play-list-add-fill.png"));
+    addVideoButton->setIconSize(QSize(24, 24));
+    addVideoButton->setToolTip("添加");
+    
+    deleteVideoButton = new QToolButton;
+    deleteVideoButton->setIcon(QIcon(":/icons/play-list-add-fill.png"));    // 删除图标还没找好
+    deleteVideoButton->setIconSize(QSize(24, 24));
+    deleteVideoButton->setToolTip("删除");
     deleteVideoButton->setDisabled(true);
 
-    playOrStopButton = new QPushButton("开始/暂停");
+    playOrStopButton = new QToolButton;
+    playOrStopButton->setIcon(QIcon(":/icons/play-fill.png"));
+    playOrStopButton->setIconSize(QSize(24, 24));
+    playOrStopButton->setToolTip("播放");
     playOrStopButton->setDisabled(true);
 
-    playPreviousButton = new QPushButton("上一个");
+    playPreviousButton = new QToolButton;
+    playPreviousButton->setIcon(QIcon(":/icons/skip-back-fill.png"));
+    playPreviousButton->setIconSize(QSize(24, 24));
+    playPreviousButton->setToolTip("上一个");
     playPreviousButton->setDisabled(true);
 
-    stopPlayingButton = new QPushButton("停止");
+    stopPlayingButton = new QToolButton;
+    stopPlayingButton->setIcon(QIcon(":/icons/stop-fill.png"));
+    stopPlayingButton->setIconSize(QSize(24, 24));
+    stopPlayingButton->setToolTip("停止");
     stopPlayingButton->setDisabled(true);
 
-    playNextButton = new QPushButton("下一个");
+    playNextButton = new QToolButton;
+    playNextButton->setIcon(QIcon(":/icons/skip-forward-fill.png"));
+    playNextButton->setIconSize(QSize(24, 24));
+    playNextButton->setToolTip("下一个");
     playNextButton->setDisabled(true);
 
-    volumeButton = new QPushButton("静音");
+    volumeButton = new QToolButton;
+    volumeButton->setIcon(QIcon(":/icons/volume-down-fill.png"));
+    volumeButton->setIconSize(QSize(24, 24));
+    volumeButton->setToolTip("静音");
 
     volumeSlider = new QSlider(Qt::Horizontal);
     volumeSlider->setRange(0, 100);
@@ -177,7 +198,7 @@ void MainWindow::DestoryLibVlc() noexcept
 void MainWindow::InitializeConnect()
 {
     // 添加视频
-    connect(addVideoButton, &QPushButton::clicked, [=]()
+    connect(addVideoButton, &QToolButton::clicked, [=]()
     {
         auto fileNames = QFileDialog::getOpenFileNames(this, "选择媒体文件");
         if (!fileNames.empty())
@@ -209,43 +230,59 @@ void MainWindow::InitializeConnect()
     });
 
     // 播放/暂停视频
-    connect(playOrStopButton, &QPushButton::clicked, [=]()
+    connect(playOrStopButton, &QToolButton::clicked, [=]()
     {
         if (!libvlc_media_list_player_is_playing(videoPlayer))  // 连第一遍播放都还没开始的，先让其播放
         {
             libvlc_media_list_player_play(videoPlayer);
+
+            playOrStopButton->setIcon(QIcon(":/icons/pause-fill.png"));
+            playOrStopButton->setToolTip("暂停");
         }
         else // 已经开始播放的
         {
-            // 根据文档，只需要调用这个函数就好，它会自动判断该暂停播放还是恢复播放
             libvlc_media_list_player_pause(videoPlayer);
+
+            playOrStopButton->setIcon(QIcon(":/icons/play-fill.png"));
+            playOrStopButton->setToolTip("播放");
         }
     });
 
     // 播放上一个
-    connect(playPreviousButton, &QPushButton::clicked, [=]()
+    connect(playPreviousButton, &QToolButton::clicked, [=]()
     {
         libvlc_media_list_player_previous(videoPlayer);
     });
 
     // 播放下一个
-    connect(playNextButton, &QPushButton::clicked, [=]()
+    connect(playNextButton, &QToolButton::clicked, [=]()
     {
         libvlc_media_list_player_next(videoPlayer);
     });
 
     // 停止播放
-    connect(stopPlayingButton, &QPushButton::clicked, [=]()
+    connect(stopPlayingButton, &QToolButton::clicked, [=]()
     {
         libvlc_media_list_player_stop(videoPlayer);
     });
 
     // 静音按钮
-    connect(volumeButton, &QPushButton::clicked, [=]()
+    connect(volumeButton, &QToolButton::clicked, [=]()
     {
         auto *player = libvlc_media_list_player_get_media_player(videoPlayer);
-        libvlc_audio_set_mute(player, !libvlc_audio_get_mute(player));
+        const auto isMute = libvlc_audio_get_mute(player);
+        libvlc_audio_set_mute(player, !isMute);
         libvlc_media_player_release(player);
+
+
+        if (isMute) // 如果原先是静音状态，那么点击此按钮时将有声音
+        {
+            volumeButton->setIcon(QIcon(":/icons/volume-down-fill.png"));
+        }
+        else        // 如果原先不是静音状态，那么点击此按钮时将静音
+        {
+            volumeButton->setIcon(QIcon(":/icons/volume-mute-fill.png"));
+        }
     });
 
     // 音量条
@@ -254,6 +291,15 @@ void MainWindow::InitializeConnect()
         auto *player = libvlc_media_list_player_get_media_player(videoPlayer);
         libvlc_audio_set_volume(player, value);
         libvlc_media_player_release(player);
+
+        if (value == 0) // 音量为0时记得将换成静音的图标
+        {
+            volumeButton->setIcon(QIcon(":/icons/volume-mute-fill.png"));
+        }
+        else            // 音量不为0时则换成有声音的图标（暂不处理音量小于0的情况，因为正常操作并不会出现）
+        {
+            volumeButton->setIcon(QIcon(":/icons/volume-down-fill.png"));
+        }
     });
 
     // 选择列表循环播放的模式
@@ -281,7 +327,7 @@ void MainWindow::InitializeConnect()
     });
 
     // 删除按钮
-    connect(deleteVideoButton, &QPushButton::clicked, [=]()
+    connect(deleteVideoButton, &QToolButton::clicked, [=]()
     {
         const auto index = videoListWidget->currentRow();
         delete videoListWidget->takeItem(index);    // takeItem返回的指针需要手动释放
@@ -390,7 +436,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         }
         else
         {
-            // 配置文件出错
+            event->ignore();    // 用户直接点击了X
         }
     }
 }

@@ -8,7 +8,6 @@
 #include <QListWidget>
 #include <QComboBox>
 #include <QCheckBox>
-#include <QPushButton>
 #include <QSlider>
 #include <QLabel>
 #include <QFileDialog>
@@ -21,6 +20,8 @@
 #include <QMenu>
 #include <QAction>
 #include <QCloseEvent>
+#include <QToolButton>
+#include <QSize>
 
 #include <vlc/vlc.h>
 
@@ -64,8 +65,8 @@ private:
     QComboBox *modeComboBox;
     QLabel *modeLabel;
     QCheckBox *runAtStartupCheckBox;
-    QPushButton *volumeButton, *addVideoButton, *deleteVideoButton;
-    QPushButton *playOrStopButton, *playNextButton, *stopPlayingButton, *playPreviousButton;
+    QToolButton *volumeButton, *addVideoButton, *deleteVideoButton;
+    QToolButton *playOrStopButton, *playNextButton, *stopPlayingButton, *playPreviousButton;
     QSlider *volumeSlider;
 
     QSystemTrayIcon *tray;
