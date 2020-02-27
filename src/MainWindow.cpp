@@ -1,7 +1,7 @@
 ﻿#include "MainWindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
-    : QWidget(parent)
+    : QWidget(parent), presentIndex(0)
 {
     InitializeUi();         // 初始化UI
     InitializeLibVlc();     // 初始化libvlc
@@ -191,6 +191,18 @@ void MainWindow::InitializeLibVlc()
     auto *innerPlayer = libvlc_media_list_player_get_media_player(videoPlayer);
     libvlc_media_player_set_hwnd(innerPlayer, GetDesktopHwnd());
     libvlc_media_player_release(innerPlayer);
+
+    videoPlayerEventManager = libvlc_media_list_player_event_manager(videoPlayer);
+    libvlc_event_attach(videoPlayerEventManager, 
+                        libvlc_MediaListPlayerNextItemSet, 
+                        [](const struct libvlc_event_t*, void *ptr) 
+                        {
+                            static_cast<MainWindow*>(ptr)->EmitMediaListPlayerNextItemSet(); 
+                        }, 
+                        this);
+    // 注意：在C库中使用C++的成员函数作为回调函数，可以在C库设置回调函数的函数的void*数据项中传this指针，
+    // 然后通过this再调用真正的回调函数，将此C库函数作为此类的友元函数可以减少破坏封装的风险，
+    // 这样只需要将此回调函数声明为private，否则则需要将此回调函数作为public
 }
 
 void MainWindow::InitializeThumbnailToolBar()
@@ -502,6 +514,11 @@ void MainWindow::OnPlayOrPauseClicked() noexcept
         playOrPauseThumbnailButton->setIcon(PlayButtonIcon);
         playOrPauseThumbnailButton->setToolTip("播放");
     }
+}
+
+void MainWindow::EmitMediaListPlayerNextItemSet() noexcept
+{
+    emit MediaListPlayerNextItemSet();
 }
 
 HWND MainWindow::GetDesktopHwnd() const noexcept

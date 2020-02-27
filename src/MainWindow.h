@@ -60,8 +60,17 @@ private:
     // 当点击开始/暂停按钮时的动作，需要同步主界面上和ThumbnailToolBar上按钮的状态
     void OnPlayOrPauseClicked() noexcept;
 
+    void EmitMediaListPlayerNextItemSet() noexcept;
+
+    // 此函数声明成友元是为了user_data中能传this指针然后通过this访问private的EmitMediaListPlayerNextItemSet
+    friend int libvlc_event_attach(libvlc_event_manager_t *p_event_manager,
+                                   libvlc_event_type_t i_event_type,
+                                   libvlc_callback_t f_callback,
+                                   void *user_data);
+
 signals:
     void VideoListCountChanged(int count);  // 当列表控件中的项目个数发生变化时会触发此信号，处理函数可以用来控制按钮的可使用性等等
+    void MediaListPlayerNextItemSet();      // 正在播放的项目切换时会发出的信号
 
 private:
     QVBoxLayout *mainLayout;
@@ -86,5 +95,8 @@ private:
     libvlc_instance_t *vlcInstance;
     libvlc_media_list_t *videoList;
     libvlc_media_list_player_t *videoPlayer;
+    libvlc_event_manager_t *videoPlayerEventManager;
+
+    int presentIndex;
 };
 #endif // MAINWINDOW_H
