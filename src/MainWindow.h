@@ -22,6 +22,8 @@
 #include <QCloseEvent>
 #include <QToolButton>
 #include <QSize>
+#include <QWinThumbnailToolBar>
+#include <QWinThumbnailToolButton>
 
 #include <vlc/vlc.h>
 
@@ -42,6 +44,7 @@ private:
     void InitializeSettings();
     void InitializeLibVlc();
     void InitializeConnect();
+    void InitializeThumbnailToolBar();
 
     void DestoryLibVlc() noexcept;
 
@@ -52,6 +55,9 @@ private:
     void SetRunAtStartup(bool doSetting) const noexcept;
 
     void closeEvent(QCloseEvent *event) override;
+
+    // 当点击开始/暂停按钮时的动作，需要同步主界面上和ThumbnailToolBar上按钮的状态
+    void OnPlayOrPauseClicked() noexcept;
 
 signals:
     void VideoListCountChanged(int count);  // 当列表控件中的项目个数发生变化时会触发此信号，处理函数可以用来控制按钮的可使用性等等
@@ -66,10 +72,13 @@ private:
     QLabel *modeLabel;
     QCheckBox *runAtStartupCheckBox;
     QToolButton *volumeButton, *addVideoButton, *deleteVideoButton;
-    QToolButton *playOrStopButton, *playNextButton, *stopPlayingButton, *playPreviousButton;
+    QToolButton *playOrPauseButton, *playNextButton, *stopPlayingButton, *playPreviousButton;
     QSlider *volumeSlider;
 
     QSystemTrayIcon *tray;
+
+    QWinThumbnailToolBar *thumbnailToolBar;
+    QWinThumbnailToolButton *playOrPauseThumbnailButton, *playNextThumbnailButton, *playPreviousThumbnailButton;
 
     QSettings *settings;
 

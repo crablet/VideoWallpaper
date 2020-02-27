@@ -48,11 +48,11 @@ void MainWindow::InitializeUi()
     deleteVideoButton->setToolTip("删除");
     deleteVideoButton->setDisabled(true);
 
-    playOrStopButton = new QToolButton;
-    playOrStopButton->setIcon(QIcon(":/icons/play-fill.png"));
-    playOrStopButton->setIconSize(QSize(24, 24));
-    playOrStopButton->setToolTip("播放");
-    playOrStopButton->setDisabled(true);
+    playOrPauseButton = new QToolButton;
+    playOrPauseButton->setIcon(QIcon(":/icons/play-fill.png"));
+    playOrPauseButton->setIconSize(QSize(24, 24));
+    playOrPauseButton->setToolTip("播放");
+    playOrPauseButton->setDisabled(true);
 
     playPreviousButton = new QToolButton;
     playPreviousButton->setIcon(QIcon(":/icons/skip-back-fill.png"));
@@ -80,11 +80,12 @@ void MainWindow::InitializeUi()
     volumeSlider = new QSlider(Qt::Horizontal);
     volumeSlider->setRange(0, 100);
     volumeSlider->setTickInterval(1);
+    volumeSlider->setValue(volumeSlider->maximum());
 
     videoControlLayout = new QHBoxLayout(this);
     videoControlLayout->addWidget(addVideoButton);      // 添加
     videoControlLayout->addWidget(deleteVideoButton);   // 删除
-    videoControlLayout->addWidget(playOrStopButton);    // 开始/暂停
+    videoControlLayout->addWidget(playOrPauseButton);    // 开始/暂停
     videoControlLayout->addWidget(playPreviousButton);  // 上一个
     videoControlLayout->addWidget(stopPlayingButton);   // 停止
     videoControlLayout->addWidget(playNextButton);      // 下一个
@@ -192,6 +193,40 @@ void MainWindow::InitializeLibVlc()
     libvlc_media_player_release(innerPlayer);
 }
 
+void MainWindow::InitializeThumbnailToolBar()
+{
+    thumbnailToolBar = new QWinThumbnailToolBar(this);
+    thumbnailToolBar->setWindow(this->windowHandle());
+
+    playPreviousThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
+    playPreviousThumbnailButton->setIcon(QIcon(":/icons/skip-back-fill.png"));
+    playPreviousThumbnailButton->setToolTip("上一个");
+    playPreviousThumbnailButton->setEnabled(true);
+    connect(playPreviousThumbnailButton, &QWinThumbnailToolButton::clicked, [=]()
+    {
+        libvlc_media_list_player_previous(videoPlayer);
+    });
+
+    playOrPauseThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
+    playOrPauseThumbnailButton->setIcon(QIcon(":/icons/play-fill.png"));
+    playOrPauseThumbnailButton->setToolTip("开始");
+    playOrPauseThumbnailButton->setEnabled(true);
+    connect(playOrPauseThumbnailButton, &QWinThumbnailToolButton::clicked, this, &MainWindow::OnPlayOrPauseClicked);
+
+    playNextThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
+    playNextThumbnailButton->setIcon(QIcon(":/icons/skip-forward-fill.png"));
+    playNextThumbnailButton->setToolTip("下一个");
+    playNextThumbnailButton->setEnabled(true);
+    connect(playNextThumbnailButton, &QWinThumbnailToolButton::clicked, [=]()
+    {
+        libvlc_media_list_player_next(videoPlayer);
+    });
+
+    thumbnailToolBar->addButton(playPreviousThumbnailButton);
+    thumbnailToolBar->addButton(playOrPauseThumbnailButton);
+    thumbnailToolBar->addButton(playNextThumbnailButton);
+}
+
 void MainWindow::DestoryLibVlc() noexcept
 {
     libvlc_media_list_player_release(videoPlayer);
@@ -234,23 +269,7 @@ void MainWindow::InitializeConnect()
     });
 
     // 播放/暂停视频
-    connect(playOrStopButton, &QToolButton::clicked, [=]()
-    {
-        if (!libvlc_media_list_player_is_playing(videoPlayer))  // 连第一遍播放都还没开始的，先让其播放
-        {
-            libvlc_media_list_player_play(videoPlayer);
-
-            playOrStopButton->setIcon(QIcon(":/icons/pause-fill.png"));
-            playOrStopButton->setToolTip("暂停");
-        }
-        else // 已经开始播放的
-        {
-            libvlc_media_list_player_pause(videoPlayer);
-
-            playOrStopButton->setIcon(QIcon(":/icons/play-fill.png"));
-            playOrStopButton->setToolTip("播放");
-        }
-    });
+    connect(playOrPauseButton, &QToolButton::clicked, this, &MainWindow::OnPlayOrPauseClicked);
 
     // 播放上一个
     connect(playPreviousButton, &QToolButton::clicked, [=]()
@@ -369,21 +388,36 @@ void MainWindow::InitializeConnect()
     // 当列表项变化之时应该做的处理
     connect(this, &MainWindow::VideoListCountChanged, [=](int count)
     {
+        static bool isThumbnainToolBarInitialized = false;
+        if (!isThumbnainToolBarInitialized)
+        {
+            InitializeThumbnailToolBar();
+            isThumbnainToolBarInitialized = true;
+        }
+
         if (count)  // 有媒体可以播放，于是这些按钮变为可用
         {
-            playOrStopButton->setEnabled(true);
+            playOrPauseButton->setEnabled(true);
             deleteVideoButton->setEnabled(true);
             playPreviousButton->setEnabled(true);
             stopPlayingButton->setEnabled(true);
             playNextButton->setEnabled(true);
+
+            playOrPauseThumbnailButton->setEnabled(true);
+            playNextThumbnailButton->setEnabled(true);
+            playPreviousThumbnailButton->setEnabled(true);
         }
         else        // 没有媒体可以播放，于是这些按钮变为不可用
         {
-            playOrStopButton->setDisabled(true);
+            playOrPauseButton->setDisabled(true);
             deleteVideoButton->setDisabled(true);
             playPreviousButton->setDisabled(true);
             stopPlayingButton->setDisabled(true);
             playNextButton->setDisabled(true);
+
+            playOrPauseThumbnailButton->setEnabled(false);
+            playNextThumbnailButton->setEnabled(false);
+            playPreviousThumbnailButton->setEnabled(false);
         }
     });
 }
@@ -442,6 +476,31 @@ void MainWindow::closeEvent(QCloseEvent *event)
         {
             event->ignore();    // 用户直接点击了X
         }
+    }
+}
+
+// 当点击开始/暂停按钮时的动作，需要同步主界面上和ThumbnailToolBar上按钮的状态
+void MainWindow::OnPlayOrPauseClicked() noexcept
+{
+    if (!libvlc_media_list_player_is_playing(videoPlayer))  // 连第一遍播放都还没开始的，先让其播放
+    {
+        libvlc_media_list_player_play(videoPlayer);
+
+        playOrPauseButton->setIcon(QIcon(":/icons/pause-fill.png"));
+        playOrPauseButton->setToolTip("暂停");
+
+        playOrPauseThumbnailButton->setIcon(QIcon(":/icons/pause-fill.png"));
+        playOrPauseThumbnailButton->setToolTip("暂停");
+    }
+    else // 已经开始播放的
+    {
+        libvlc_media_list_player_pause(videoPlayer);
+
+        playOrPauseButton->setIcon(QIcon(":/icons/play-fill.png"));
+        playOrPauseButton->setToolTip("播放");
+
+        playOrPauseThumbnailButton->setIcon(QIcon(":/icons/play-fill.png"));
+        playOrPauseThumbnailButton->setToolTip("播放");
     }
 }
 
