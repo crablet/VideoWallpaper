@@ -8,7 +8,7 @@ OnExitDialog::OnExitDialog(QWidget *parent) : QDialog(parent)
 
 void OnExitDialog::InitializeUi()
 {
-	setWindowIcon(QIcon(":/icons/film-fill.png"));
+	setWindowIcon(LogoIcon);
 
 	////////////////////////////////////////////////////////
 

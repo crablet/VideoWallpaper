@@ -16,7 +16,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::InitializeUi()
 {
-    setWindowIcon(QIcon(":/icons/film-fill.png"));
+    setWindowIcon(LogoIcon);
 
     ///////////////////////////////////////////////////////////
 
@@ -38,43 +38,43 @@ void MainWindow::InitializeUi()
     ///////////////////////////////////////////////////////////
 
     addVideoButton = new QToolButton;
-    addVideoButton->setIcon(QIcon(":/icons/play-list-add-fill.png"));
-    addVideoButton->setIconSize(QSize(24, 24));
+    addVideoButton->setIcon(AddVideoButtonIcon);
+    addVideoButton->setIconSize(ButtonIconSize);
     addVideoButton->setToolTip("添加");
     
     deleteVideoButton = new QToolButton;
-    deleteVideoButton->setIcon(QIcon(":/icons/play-list-add-fill.png"));    // 删除图标还没找好
-    deleteVideoButton->setIconSize(QSize(24, 24));
+    deleteVideoButton->setIcon(AddVideoButtonIcon);    // 删除图标还没找好
+    deleteVideoButton->setIconSize(ButtonIconSize);
     deleteVideoButton->setToolTip("删除");
     deleteVideoButton->setDisabled(true);
 
     playOrPauseButton = new QToolButton;
-    playOrPauseButton->setIcon(QIcon(":/icons/play-fill.png"));
-    playOrPauseButton->setIconSize(QSize(24, 24));
+    playOrPauseButton->setIcon(PlayButtonIcon);
+    playOrPauseButton->setIconSize(ButtonIconSize);
     playOrPauseButton->setToolTip("播放");
     playOrPauseButton->setDisabled(true);
 
     playPreviousButton = new QToolButton;
-    playPreviousButton->setIcon(QIcon(":/icons/skip-back-fill.png"));
-    playPreviousButton->setIconSize(QSize(24, 24));
+    playPreviousButton->setIcon(PlayPreviousButtonIcon);
+    playPreviousButton->setIconSize(ButtonIconSize);
     playPreviousButton->setToolTip("上一个");
     playPreviousButton->setDisabled(true);
 
     stopPlayingButton = new QToolButton;
-    stopPlayingButton->setIcon(QIcon(":/icons/stop-fill.png"));
-    stopPlayingButton->setIconSize(QSize(24, 24));
+    stopPlayingButton->setIcon(StopPlayingButtonIcon);
+    stopPlayingButton->setIconSize(ButtonIconSize);
     stopPlayingButton->setToolTip("停止");
     stopPlayingButton->setDisabled(true);
 
     playNextButton = new QToolButton;
-    playNextButton->setIcon(QIcon(":/icons/skip-forward-fill.png"));
-    playNextButton->setIconSize(QSize(24, 24));
+    playNextButton->setIcon(PlayNextButtonIcon);
+    playNextButton->setIconSize(ButtonIconSize);
     playNextButton->setToolTip("下一个");
     playNextButton->setDisabled(true);
 
     volumeButton = new QToolButton;
-    volumeButton->setIcon(QIcon(":/icons/volume-down-fill.png"));
-    volumeButton->setIconSize(QSize(24, 24));
+    volumeButton->setIcon(VolumeButtonIcon);
+    volumeButton->setIconSize(ButtonIconSize);
     volumeButton->setToolTip("静音");
 
     volumeSlider = new QSlider(Qt::Horizontal);
@@ -122,7 +122,7 @@ void MainWindow::InitializeUi()
 
     tray = new QSystemTrayIcon(this);
     tray->setContextMenu(trayMenu);
-    tray->setIcon(QIcon(R"(:/icons/film-fill.png)"));
+    tray->setIcon(TrayIcon);
     tray->show();
 }
 
@@ -199,7 +199,7 @@ void MainWindow::InitializeThumbnailToolBar()
     thumbnailToolBar->setWindow(this->windowHandle());
 
     playPreviousThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
-    playPreviousThumbnailButton->setIcon(QIcon(":/icons/skip-back-fill.png"));
+    playPreviousThumbnailButton->setIcon(PlayPreviousButtonIcon);
     playPreviousThumbnailButton->setToolTip("上一个");
     playPreviousThumbnailButton->setEnabled(true);
     connect(playPreviousThumbnailButton, &QWinThumbnailToolButton::clicked, [=]()
@@ -208,13 +208,13 @@ void MainWindow::InitializeThumbnailToolBar()
     });
 
     playOrPauseThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
-    playOrPauseThumbnailButton->setIcon(QIcon(":/icons/play-fill.png"));
+    playOrPauseThumbnailButton->setIcon(PlayButtonIcon);
     playOrPauseThumbnailButton->setToolTip("开始");
     playOrPauseThumbnailButton->setEnabled(true);
     connect(playOrPauseThumbnailButton, &QWinThumbnailToolButton::clicked, this, &MainWindow::OnPlayOrPauseClicked);
 
     playNextThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
-    playNextThumbnailButton->setIcon(QIcon(":/icons/skip-forward-fill.png"));
+    playNextThumbnailButton->setIcon(PlayNextButtonIcon);
     playNextThumbnailButton->setToolTip("下一个");
     playNextThumbnailButton->setEnabled(true);
     connect(playNextThumbnailButton, &QWinThumbnailToolButton::clicked, [=]()
@@ -486,20 +486,20 @@ void MainWindow::OnPlayOrPauseClicked() noexcept
     {
         libvlc_media_list_player_play(videoPlayer);
 
-        playOrPauseButton->setIcon(QIcon(":/icons/pause-fill.png"));
+        playOrPauseButton->setIcon(PauseButtonIcon);
         playOrPauseButton->setToolTip("暂停");
 
-        playOrPauseThumbnailButton->setIcon(QIcon(":/icons/pause-fill.png"));
+        playOrPauseThumbnailButton->setIcon(PauseButtonIcon);
         playOrPauseThumbnailButton->setToolTip("暂停");
     }
     else // 已经开始播放的
     {
         libvlc_media_list_player_pause(videoPlayer);
 
-        playOrPauseButton->setIcon(QIcon(":/icons/play-fill.png"));
+        playOrPauseButton->setIcon(PlayButtonIcon);
         playOrPauseButton->setToolTip("播放");
 
-        playOrPauseThumbnailButton->setIcon(QIcon(":/icons/play-fill.png"));
+        playOrPauseThumbnailButton->setIcon(PlayButtonIcon);
         playOrPauseThumbnailButton->setToolTip("播放");
     }
 }

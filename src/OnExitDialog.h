@@ -10,6 +10,8 @@
 #include <QWidget>
 #include <QPushButton>
 
+#include "Constants.h"
+
 // 当点击关闭按钮时会出现的对话框，但若配置已保存则不会出现
 class OnExitDialog : public QDialog
 {

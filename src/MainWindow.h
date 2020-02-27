@@ -29,6 +29,7 @@
 
 #include <Windows.h>
 
+#include "Constants.h"
 #include "OnExitDialog.h"
 
 class MainWindow : public QWidget
