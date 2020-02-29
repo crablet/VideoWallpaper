@@ -1,7 +1,7 @@
 ﻿#include "MainWindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
-    : QWidget(parent), presentIndex(0)
+    : QWidget(parent)
 {
     InitializeUi();         // 初始化UI
     InitializeLibVlc();     // 初始化libvlc
@@ -432,6 +432,11 @@ void MainWindow::InitializeConnect()
             playPreviousThumbnailButton->setEnabled(false);
         }
     });
+
+    connect(this, &MainWindow::MediaListPlayerNextItemSet, [=]()
+    {
+            GetCurrentItemName();
+    });
 }
 
 // 点击窗体右上角关闭按钮时会触发的事件，若已有配置则根据配置执行，若没有配置则弹框询问动作
@@ -547,6 +552,23 @@ HWND MainWindow::GetDesktopHwnd() const noexcept
     } while (true);
 
     return hWnd;
+}
+
+QString MainWindow::GetCurrentItemName() noexcept
+{
+    auto *player = libvlc_media_list_player_get_media_player(videoPlayer);  // 需要手动释放
+    auto *media = libvlc_media_player_get_media(player);                    // 需要手动释放
+    auto *rawName = libvlc_media_get_mrl(media);                            // 需要手动释放（吗？）
+
+    const auto currentName = QDir::toNativeSeparators(
+                             QString::fromUtf8(
+                             QByteArray::fromPercentEncoding(rawName + 8))); // + 8是为了跳过开头的file:///
+
+    //std::free(rawName);   // 为什么会出错？
+    libvlc_media_release(media);
+    libvlc_media_player_release(player);
+
+    return currentName;
 }
 
 // 设置是否开机启动

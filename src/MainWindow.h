@@ -3,6 +3,8 @@
 
 #pragma execution_character_set("utf-8")
 
+#include <cstdlib>  // std::free
+
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QListWidget>
@@ -50,6 +52,7 @@ private:
     void DestoryLibVlc() noexcept;
 
     HWND GetDesktopHwnd() const noexcept;
+    QString GetCurrentItemName() noexcept;
 
     // 设置是否开机启动
     // doSetting: true -> 开机启动，false -> 开机不启动
@@ -96,7 +99,5 @@ private:
     libvlc_media_list_t *videoList;
     libvlc_media_list_player_t *videoPlayer;
     libvlc_event_manager_t *videoPlayerEventManager;
-
-    int presentIndex;
 };
 #endif // MAINWINDOW_H
