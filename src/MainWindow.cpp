@@ -43,7 +43,7 @@ void MainWindow::InitializeUi()
     addVideoButton->setToolTip("添加");
     
     deleteVideoButton = new QToolButton;
-    deleteVideoButton->setIcon(AddVideoButtonIcon);    // 删除图标还没找好
+    deleteVideoButton->setIcon(DeleteVideoButtonIcon);
     deleteVideoButton->setIconSize(ButtonIconSize);
     deleteVideoButton->setToolTip("删除");
     deleteVideoButton->setDisabled(true);

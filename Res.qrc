@@ -11,5 +11,7 @@
         <file>icons/volume-mute-fill.png</file>
         <file>icons/volume-up-fill.png</file>
         <file>icons/film-fill.png</file>
+        <file>icons/close-fill.png</file>
+        <file>icons/add-fill.png</file>
     </qresource>
 </RCC>

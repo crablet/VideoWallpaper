@@ -6,8 +6,11 @@
 
 /***********constants of UI begin***********/
 
+// 这里对所有QIcon类型都使用#define的原因是QIcon不能在绘图设备还没存在的时候建立，而这里是配置文件
+
 #define LogoIcon                QIcon(":/icons/film-fill.png")
-#define AddVideoButtonIcon      QIcon(":/icons/play-list-add-fill.png")
+#define AddVideoButtonIcon      QIcon(":/icons/add-fill.png")
+#define DeleteVideoButtonIcon   QIcon(":/icons/close-fill.png")
 #define PlayButtonIcon          QIcon(":/icons/play-fill.png")
 #define PauseButtonIcon         QIcon(":/icons/pause-fill.png")
 #define PlayPreviousButtonIcon  QIcon(":/icons/skip-back-fill.png")
