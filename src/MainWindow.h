@@ -53,6 +53,7 @@ private:
 
     HWND GetDesktopHwnd() const noexcept;
     QString GetCurrentItemName() noexcept;
+    int GetCurrentItemIndex() noexcept;
 
     // 设置是否开机启动
     // doSetting: true -> 开机启动，false -> 开机不启动

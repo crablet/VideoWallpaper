@@ -1,5 +1,7 @@
 ﻿#include "MainWindow.h"
 
+#include <QDebug>
+
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
 {
@@ -364,14 +366,33 @@ void MainWindow::InitializeConnect()
     // 删除按钮
     connect(deleteVideoButton, &QToolButton::clicked, [=]()
     {
-        const auto index = videoListWidget->currentRow();
-        delete videoListWidget->takeItem(index);    // takeItem返回的指针需要手动释放
-
+        /************lock*************/
         libvlc_media_list_lock(videoList);
-        libvlc_media_list_remove_index(videoList, index);
-        libvlc_media_list_unlock(videoList);
 
-        emit VideoListCountChanged(videoListWidget->count());
+        const auto currentIndexOfSongList = GetCurrentItemIndex();  // 先保存一下当前编号，一会列表就改了
+
+        // 如果删除的是当前播放的项目，则直接播放下一个或者停下来，不然即使删除了该项目也会继续播放
+        if (videoListWidget->currentItem()->text() == GetCurrentItemName())
+        {
+            qDebug() << videoListWidget->currentItem()->text() << "---" << GetCurrentItemName();
+
+            if (Q_UNLIKELY(videoListWidget->count() == 1))  // 全都删完了就自动停下来
+            {                                               // 判等于1是因为此时还未对videoListWidget进行删除操作
+                libvlc_media_list_player_stop(videoPlayer);
+            }
+            else
+            {
+                libvlc_media_list_player_next(videoPlayer);
+            }
+        }
+        libvlc_media_list_remove_index(videoList, currentIndexOfSongList);  // 在播放列表中移除此项
+
+        libvlc_media_list_unlock(videoList);
+        /*************unlock*************/
+
+        delete videoListWidget->takeItem(videoListWidget->currentRow());    // takeItem返回的指针需要手动释放
+
+        emit VideoListCountChanged(videoListWidget->count());   // 发射信号通知列表项已发生改变
     });
 
     // 只有点击过播放列表中的项目才允许删除，防止误触
@@ -435,7 +456,7 @@ void MainWindow::InitializeConnect()
 
     connect(this, &MainWindow::MediaListPlayerNextItemSet, [=]()
     {
-            GetCurrentItemName();
+         GetCurrentItemName();  // todo
     });
 }
 
@@ -569,6 +590,19 @@ QString MainWindow::GetCurrentItemName() noexcept
     libvlc_media_player_release(player);
 
     return currentName;
+}
+
+int MainWindow::GetCurrentItemIndex() noexcept
+{
+    auto *player = libvlc_media_list_player_get_media_player(videoPlayer);  // 需要手动释放
+    auto *media = libvlc_media_player_get_media(player);
+
+    const int index = libvlc_media_list_index_of_item(videoList, media);
+
+    libvlc_media_player_release(player);
+    libvlc_media_release(media);
+
+    return index;
 }
 
 // 设置是否开机启动
