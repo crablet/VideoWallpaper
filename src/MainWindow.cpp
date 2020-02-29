@@ -1,7 +1,5 @@
 ﻿#include "MainWindow.h"
 
-#include <QDebug>
-
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
 {
@@ -374,8 +372,6 @@ void MainWindow::InitializeConnect()
         // 如果删除的是当前播放的项目，则直接播放下一个或者停下来，不然即使删除了该项目也会继续播放
         if (videoListWidget->currentItem()->text() == GetCurrentItemName())
         {
-            qDebug() << videoListWidget->currentItem()->text() << "---" << GetCurrentItemName();
-
             if (Q_UNLIKELY(videoListWidget->count() == 1))  // 全都删完了就自动停下来
             {                                               // 判等于1是因为此时还未对videoListWidget进行删除操作
                 libvlc_media_list_player_stop(videoPlayer);
@@ -395,10 +391,26 @@ void MainWindow::InitializeConnect()
         emit VideoListCountChanged(videoListWidget->count());   // 发射信号通知列表项已发生改变
     });
 
-    // 只有点击过播放列表中的项目才允许删除，防止误触
+    // 只有选中播放列表中的项目才允许删除，防止误触
     connect(videoListWidget, &QListWidget::itemClicked, [=]()
     {
         deleteVideoButton->setEnabled(true);
+    });
+
+    // 双击列表中的某项即可播放此项
+    connect(videoListWidget, &QListWidget::itemDoubleClicked, [=]()
+    {
+        const auto currentItemName = videoListWidget->currentItem()->text();
+        const auto count = libvlc_media_list_count(videoList);
+        for (int i = 0; i < count; ++i)
+        {
+            if Q_UNLIKELY(currentItemName == GetItemNameAtIndex(i)) // 通过名字寻找要播放的项目的编号
+            {
+                libvlc_media_list_player_play_item_at_index(videoPlayer, i);
+
+                break;
+            }
+        }
     });
 
     // 注册是否开机启动
@@ -454,6 +466,7 @@ void MainWindow::InitializeConnect()
         }
     });
 
+    // 当前播放的项目发生了变化
     connect(this, &MainWindow::MediaListPlayerNextItemSet, [=]()
     {
          GetCurrentItemName();  // todo
@@ -575,6 +588,7 @@ HWND MainWindow::GetDesktopHwnd() const noexcept
     return hWnd;
 }
 
+// 获取正在播放的项目的名字，使用Windows表示法
 QString MainWindow::GetCurrentItemName() noexcept
 {
     auto *player = libvlc_media_list_player_get_media_player(videoPlayer);  // 需要手动释放
@@ -592,6 +606,24 @@ QString MainWindow::GetCurrentItemName() noexcept
     return currentName;
 }
 
+// 根据获取位于播放列表index出的项目的名字
+QString MainWindow::GetItemNameAtIndex(int index) noexcept
+{
+    libvlc_media_list_lock(videoList);
+
+    auto *media = libvlc_media_list_item_at_index(videoList, index);
+    auto *rawName = libvlc_media_get_mrl(media);
+
+    libvlc_media_release(media);
+
+    libvlc_media_list_unlock(videoList);
+
+    return QDir::toNativeSeparators(
+           QString::fromUtf8(
+           QByteArray::fromPercentEncoding(rawName + 8)));;
+}
+
+// 获取正在播放的项目在播放列表中的index
 int MainWindow::GetCurrentItemIndex() noexcept
 {
     auto *player = libvlc_media_list_player_get_media_player(videoPlayer);  // 需要手动释放

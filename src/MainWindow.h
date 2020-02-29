@@ -4,6 +4,7 @@
 #pragma execution_character_set("utf-8")
 
 #include <cstdlib>  // std::free
+#include <string>   // std::string::c_str
 
 #include <QWidget>
 #include <QVBoxLayout>
@@ -24,6 +25,8 @@
 #include <QCloseEvent>
 #include <QToolButton>
 #include <QSize>
+#include <QString>
+#include <QByteArray>
 #include <QWinThumbnailToolBar>
 #include <QWinThumbnailToolButton>
 
@@ -52,8 +55,9 @@ private:
     void DestoryLibVlc() noexcept;
 
     HWND GetDesktopHwnd() const noexcept;
-    QString GetCurrentItemName() noexcept;
-    int GetCurrentItemIndex() noexcept;
+    QString GetCurrentItemName() noexcept;          // 获取正在播放的项目的名字，使用Windows表示法
+    QString GetItemNameAtIndex(int index) noexcept; // 根据获取位于播放列表index出的项目的名字
+    int GetCurrentItemIndex() noexcept;             // 获取正在播放的项目在播放列表中的index
 
     // 设置是否开机启动
     // doSetting: true -> 开机启动，false -> 开机不启动
