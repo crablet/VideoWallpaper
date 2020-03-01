@@ -29,6 +29,7 @@
 #include <QByteArray>
 #include <QWinThumbnailToolBar>
 #include <QWinThumbnailToolButton>
+#include <QFileInfo>
 
 #include <vlc/vlc.h>
 

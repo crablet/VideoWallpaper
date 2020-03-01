@@ -123,6 +123,7 @@ void MainWindow::InitializeUi()
     tray = new QSystemTrayIcon(this);
     tray->setContextMenu(trayMenu);
     tray->setIcon(TrayIcon);
+    tray->setToolTip("无正在播放项目");
     tray->show();
 }
 
@@ -299,6 +300,8 @@ void MainWindow::InitializeConnect()
     connect(stopPlayingButton, &QToolButton::clicked, [=]()
     {
         libvlc_media_list_player_stop(videoPlayer);
+
+        tray->setToolTip("无正在播放项目");    // 停下来了自然没有项目正在播放
     });
 
     // 静音按钮
@@ -375,6 +378,8 @@ void MainWindow::InitializeConnect()
             if (Q_UNLIKELY(videoListWidget->count() == 1))  // 全都删完了就自动停下来
             {                                               // 判等于1是因为此时还未对videoListWidget进行删除操作
                 libvlc_media_list_player_stop(videoPlayer);
+
+                tray->setToolTip("无正在播放项目");    // 停下来了自然没有项目正在播放
             }
             else
             {
@@ -469,7 +474,7 @@ void MainWindow::InitializeConnect()
     // 当前播放的项目发生了变化
     connect(this, &MainWindow::MediaListPlayerNextItemSet, [=]()
     {
-         GetCurrentItemName();  // todo
+        tray->setToolTip("正在播放 - " + QFileInfo(GetCurrentItemName()).fileName());   // 托盘提示改为当前播放项的名字
     });
 }
 
