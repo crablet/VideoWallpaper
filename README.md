@@ -2,7 +2,7 @@
  一款基于libvlc和Qt的开源动态壁纸软件
 
 ## 预览
-![无法预览请打开此链接：https://s2.ax1x.com/2020/02/20/3eUOKO.gif](https://s2.ax1x.com/2020/02/20/3eUOKO.gif)
+![无法预览请打开此链接：https://s2.ax1x.com/2020/03/02/3f1Kv8.gif](https://s2.ax1x.com/2020/03/02/3f1Kv8.gif)
 
 ## 功能
  使用该软件可以将Windows桌面壁纸更换成您喜欢的动图、视频等多媒体文件。软件使用libvlc作为后端解码，理论上能支持所有能使用vlc播放器播放的多媒体文件。
