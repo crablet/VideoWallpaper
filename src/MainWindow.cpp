@@ -23,10 +23,12 @@ void MainWindow::InitializeUi()
     modeLabel = new QLabel("模式：");
     modeComboBox = new QComboBox;
     modeComboBox->addItems({ "不循环", "列表循环", "单曲循环", "随机播放" });
+    modeComboBox->setStyleSheet(ComboBoxStyle);
 
     aspectRatioLabel = new QLabel("尺寸：");
     aspectRatioComboBox = new QComboBox;
     aspectRatioComboBox->addItems({ "默认", "填充", "适应", "拉伸", "16:9", "4:3" });
+    aspectRatioComboBox->setStyleSheet(ComboBoxStyle);
 
     runAtStartupCheckBox = new QCheckBox("开机启动");
 

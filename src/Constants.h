@@ -21,6 +21,8 @@
 
 inline const QSize ButtonIconSize = QSize(24, 24);
 
+// 去除虚线
+inline const QString ComboBoxStyle = "QComboBox QAbstractItemView { outline: 0px }";
 
 /***********constants of UI end***********/
 
