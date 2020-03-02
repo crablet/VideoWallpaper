@@ -24,11 +24,18 @@ void MainWindow::InitializeUi()
     modeComboBox = new QComboBox;
     modeComboBox->addItems({ "不循环", "列表循环", "单曲循环", "随机播放" });
 
+    aspectRatioLabel = new QLabel("尺寸：");
+    aspectRatioComboBox = new QComboBox;
+    aspectRatioComboBox->addItems({ "默认", "填充", "适应", "拉伸", "16:9", "4:3" });
+
     runAtStartupCheckBox = new QCheckBox("开机启动");
 
     modeSettingsLayout = new QHBoxLayout(this);
     modeSettingsLayout->addWidget(modeLabel);
     modeSettingsLayout->addWidget(modeComboBox);
+    modeSettingsLayout->addStretch();
+    modeSettingsLayout->addWidget(aspectRatioLabel);
+    modeSettingsLayout->addWidget(aspectRatioComboBox);
     modeSettingsLayout->addStretch();
     modeSettingsLayout->addWidget(runAtStartupCheckBox);
 
@@ -425,6 +432,67 @@ void MainWindow::InitializeConnect()
         // 否则同理
         SetRunAtStartup(state == Qt::Checked);
     });
+
+    connect(aspectRatioComboBox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged), 
+        [=](const QString &ratioText)
+        {
+            auto *player = libvlc_media_list_player_get_media_player(videoPlayer);
+            if (ratioText == "默认")      // 同“适应”
+            {
+                libvlc_video_set_aspect_ratio(player, nullptr);
+            }
+            else if (ratioText == "填充") // 图片等比缩放，优先适应最小边
+            {
+                if (libvlc_media_list_player_is_playing(videoPlayer))
+                {
+                    unsigned int videoWidth = 0, videoHeight = 0;
+                    libvlc_video_get_size(player, 0, &videoWidth, &videoHeight);
+
+                    const auto width = GetSystemMetrics(SM_CXSCREEN);   // 不能是SM_CXFULLSCREEN
+                    const auto height = GetSystemMetrics(SM_CYSCREEN);  // 不能是SM_CYFULLSCREEN
+                    if (width < height)
+                    {
+                        const double scale = 1.0 * width / videoWidth;
+                        videoHeight = static_cast<unsigned int>(1.0 * videoHeight * scale);
+                        videoWidth = width;
+                    }
+                    else
+                    {
+                        const double scale = 1.0 * height / videoHeight;
+                        videoWidth = static_cast<unsigned int>(1.0 * videoWidth * scale);
+                        videoHeight = height;
+                    }
+
+                    const auto gcd = std::gcd(videoWidth, videoHeight);
+                    const auto ratioString = std::to_string(videoWidth / gcd) + ':' + std::to_string(videoHeight / gcd);
+                    libvlc_video_set_aspect_ratio(player, ratioString.c_str());
+                }
+                else
+                {
+                    QMessageBox::information(this, "提示", "在没有正在播放的项目时此选项无效");
+                }
+            }
+            else if (ratioText == "适应") // 图片等比缩放，保持图片比例的同时最大化显示图片
+            {
+                libvlc_video_set_aspect_ratio(player, nullptr);
+            }
+            else if (ratioText == "拉伸") // 图片根据屏幕显示分辨率拉伸，让一张图片就占满桌面
+            {
+                const auto width = GetSystemMetrics(SM_CXSCREEN);   // 不能是SM_CXFULLSCREEN
+                const auto height = GetSystemMetrics(SM_CYSCREEN);  // 不能是SM_CYFULLSCREEN
+                const auto gcd = std::gcd(width, height);
+
+                const auto ratioString = std::to_string(width / gcd) + ':' + std::to_string(height / gcd);
+                libvlc_video_set_aspect_ratio(player, ratioString.c_str());
+            }
+            else
+            {
+                const auto ratioTextStdString = ratioText.toStdString();
+                libvlc_video_set_aspect_ratio(player, ratioTextStdString.c_str());
+            }
+
+            libvlc_media_player_release(player);
+        });
 
     // 来自托盘的信号的处理
     connect(tray, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason)

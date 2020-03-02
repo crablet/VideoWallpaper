@@ -4,7 +4,8 @@
 #pragma execution_character_set("utf-8")
 
 #include <cstdlib>  // std::free
-#include <string>   // std::string::c_str
+#include <string>   // std::string::c_str, std::to_string
+#include <cmath>    // std::gcd
 
 #include <QWidget>
 #include <QVBoxLayout>
@@ -30,6 +31,7 @@
 #include <QWinThumbnailToolBar>
 #include <QWinThumbnailToolButton>
 #include <QFileInfo>
+#include <QMessageBox>
 
 #include <vlc/vlc.h>
 
@@ -87,8 +89,8 @@ private:
     QWidget *modeSettingsWidget, *videoControlWidget;
     QListWidget *videoListWidget;
 
-    QComboBox *modeComboBox;
-    QLabel *modeLabel;
+    QComboBox *modeComboBox, *aspectRatioComboBox;
+    QLabel *modeLabel, *aspectRatioLabel;
     QCheckBox *runAtStartupCheckBox;
     QToolButton *volumeButton, *addVideoButton, *deleteVideoButton;
     QToolButton *playOrPauseButton, *playNextButton, *stopPlayingButton, *playPreviousButton;
