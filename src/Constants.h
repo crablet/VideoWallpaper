@@ -3,6 +3,7 @@
 
 #include <QSize>
 #include <QIcon>
+#include <QString>
 
 /***********constants of UI begin***********/
 
@@ -30,6 +31,19 @@ inline const QString ComboBoxStyle = "QComboBox QAbstractItemView { outline: 0px
 
 /***********constants of config begin***********/
 
+inline const QString ModeLabelText = "模式：";
+inline const QString AspectRatioLabelText = "尺寸：";
+inline const QString RunAtStartupCheckBoxText = "开机启动";
+inline const QString AddVideoButtonText = "添加";
+inline const QString DeleteVideoButtonText = "删除";
+inline const QString PlayOrPauseButtonText_PLAY = "播放";
+inline const QString PlayPreviousButtonText = "上一个";
+inline const QString StopPlayingButtonText = "停止";
+inline const QString PlayNextButtonText = "下一个";
+inline const QString VolumeButtonText = "静音";
+
+inline constexpr const char *VideoListPath = "userdata/videolist";
+inline constexpr const char *RunAtStartupRegPath = R"(HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run)";
 
 /***********constants of config end***********/
 

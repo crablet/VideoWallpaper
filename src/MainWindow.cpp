@@ -20,17 +20,17 @@ void MainWindow::InitializeUi()
 
     ///////////////////////////////////////////////////////////
 
-    modeLabel = new QLabel("模式：");
+    modeLabel = new QLabel(ModeLabelText);
     modeComboBox = new QComboBox;
     modeComboBox->addItems({ "不循环", "列表循环", "单曲循环", "随机播放" });
     modeComboBox->setStyleSheet(ComboBoxStyle);
 
-    aspectRatioLabel = new QLabel("尺寸：");
+    aspectRatioLabel = new QLabel(AspectRatioLabelText);
     aspectRatioComboBox = new QComboBox;
     aspectRatioComboBox->addItems({ "默认", "填充", "适应", "拉伸", "16:9", "4:3" });
     aspectRatioComboBox->setStyleSheet(ComboBoxStyle);
 
-    runAtStartupCheckBox = new QCheckBox("开机启动");
+    runAtStartupCheckBox = new QCheckBox(RunAtStartupCheckBoxText);
 
     modeSettingsLayout = new QHBoxLayout(this);
     modeSettingsLayout->addWidget(modeLabel);
@@ -49,42 +49,42 @@ void MainWindow::InitializeUi()
     addVideoButton = new QToolButton;
     addVideoButton->setIcon(AddVideoButtonIcon);
     addVideoButton->setIconSize(ButtonIconSize);
-    addVideoButton->setToolTip("添加");
+    addVideoButton->setToolTip(AddVideoButtonText);
     
     deleteVideoButton = new QToolButton;
     deleteVideoButton->setIcon(DeleteVideoButtonIcon);
     deleteVideoButton->setIconSize(ButtonIconSize);
-    deleteVideoButton->setToolTip("删除");
+    deleteVideoButton->setToolTip(DeleteVideoButtonText);
     deleteVideoButton->setDisabled(true);
 
     playOrPauseButton = new QToolButton;
     playOrPauseButton->setIcon(PlayButtonIcon);
     playOrPauseButton->setIconSize(ButtonIconSize);
-    playOrPauseButton->setToolTip("播放");
+    playOrPauseButton->setToolTip(PlayOrPauseButtonText_PLAY);
     playOrPauseButton->setDisabled(true);
 
     playPreviousButton = new QToolButton;
     playPreviousButton->setIcon(PlayPreviousButtonIcon);
     playPreviousButton->setIconSize(ButtonIconSize);
-    playPreviousButton->setToolTip("上一个");
+    playPreviousButton->setToolTip(PlayPreviousButtonText);
     playPreviousButton->setDisabled(true);
 
     stopPlayingButton = new QToolButton;
     stopPlayingButton->setIcon(StopPlayingButtonIcon);
     stopPlayingButton->setIconSize(ButtonIconSize);
-    stopPlayingButton->setToolTip("停止");
+    stopPlayingButton->setToolTip(StopPlayingButtonText);
     stopPlayingButton->setDisabled(true);
 
     playNextButton = new QToolButton;
     playNextButton->setIcon(PlayNextButtonIcon);
     playNextButton->setIconSize(ButtonIconSize);
-    playNextButton->setToolTip("下一个");
+    playNextButton->setToolTip(PlayNextButtonText);
     playNextButton->setDisabled(true);
 
     volumeButton = new QToolButton;
     volumeButton->setIcon(VolumeButtonIcon);
     volumeButton->setIconSize(ButtonIconSize);
-    volumeButton->setToolTip("静音");
+    volumeButton->setToolTip(VolumeButtonText);
 
     volumeSlider = new QSlider(Qt::Horizontal);
     volumeSlider->setRange(0, 100);
@@ -634,10 +634,10 @@ void MainWindow::OnPlayOrPauseClicked() noexcept
 
 void MainWindow::SaveVideoList() noexcept
 {
-    QFile file("userdata/videolist");
+    QFile file(VideoListPath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
-        QMessageBox::critical(this, "读取失败", "无法打开/user/videolist文件，请检查");
+        QMessageBox::critical(this, "读取失败", "无法打开" + QString(VideoListPath) + "文件，请检查");
     }
 
     QTextStream textStream(&file);
@@ -741,9 +741,7 @@ int MainWindow::GetCurrentItemIndex() noexcept
 // doSetting: true -> 开机启动，false -> 开机不启动
 void MainWindow::SetRunAtStartup(bool doSetting) const noexcept
 {
-    QSettings
-        Reg(R"(HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run)",
-            QSettings::NativeFormat);
+    QSettings Reg(RunAtStartupRegPath,QSettings::NativeFormat);
     if (doSetting)
     {
         // 给后面的值加上双引号是为了符合Windows默认的规范
