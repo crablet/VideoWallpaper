@@ -32,6 +32,8 @@
 #include <QWinThumbnailToolButton>
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QFile>
+#include <QTextStream>
 
 #include <vlc/vlc.h>
 
@@ -70,6 +72,14 @@ private:
 
     // 当点击开始/暂停按钮时的动作，需要同步主界面上和ThumbnailToolBar上按钮的状态
     void OnPlayOrPauseClicked() noexcept;
+
+    // 保存媒体列表到文件中
+    void SaveVideoList() noexcept;
+
+    void SaveVideoListAndQuitApp() noexcept;
+
+    // 从配置文件中读取媒体列表
+    void ReadVideoList() noexcept;
 
     void EmitMediaListPlayerNextItemSet() noexcept;
 

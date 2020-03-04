@@ -561,7 +561,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         }
         else if (action == "exit")
         {
-            qApp->quit();
+            SaveVideoListAndQuitApp();
         }
         else
         {
@@ -579,20 +579,22 @@ void MainWindow::closeEvent(QCloseEvent *event)
         }
         else if (result == OnExitDialog::BackgroundAndSave)     // 后台运行且保存配置
         {
+            settings->setValue("CloseClickedAction", "background");
+
             event->ignore();
             this->hide();
-
-            settings->setValue("CloseClickedAction", "background");
         }
         else if (result == OnExitDialog::ExitWithoutSaving)     // 直接退出且不保存配置
         {
+            SaveVideoList();
+
             qApp->quit();
         }
         else if (result == OnExitDialog::ExitAndSave)           // 直接退出且保存配置
         {
-            qApp->quit();
-
             settings->setValue("CloseClickedAction", "exit");
+
+            SaveVideoListAndQuitApp();
         }
         else if (result == OnExitDialog::Cancel)                // 取消操作
         {
@@ -628,6 +630,29 @@ void MainWindow::OnPlayOrPauseClicked() noexcept
         playOrPauseThumbnailButton->setIcon(PlayButtonIcon);
         playOrPauseThumbnailButton->setToolTip("播放");
     }
+}
+
+void MainWindow::SaveVideoList() noexcept
+{
+    QFile file("userdata/videolist");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QMessageBox::critical(this, "读取失败", "无法打开/user/videolist文件，请检查");
+    }
+
+    QTextStream textStream(&file);
+    const auto videoListWidgetCount = videoListWidget->count();
+    for (int i = 0; i < videoListWidgetCount; ++i)
+    {
+        textStream << videoListWidget->item(i)->text() << endl;
+    }
+}
+
+void MainWindow::SaveVideoListAndQuitApp() noexcept
+{
+    SaveVideoList();
+
+    qApp->quit();
 }
 
 void MainWindow::EmitMediaListPlayerNextItemSet() noexcept
