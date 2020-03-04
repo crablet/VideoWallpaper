@@ -188,6 +188,33 @@ void MainWindow::InitializeSettings()
 
         // 以上一大段和modeComboBox的信号处理函数重合很大，不太好，需要改进
     }
+
+    //if (QFile file(VideoListPath); !file.open(QIODevice::Text | QIODevice::ReadOnly))
+    //{
+    //    // 打开失败
+    //}
+    //else
+    //{
+    //    QTextStream textStream(&file);
+    //    textStream.setCodec("utf-8");
+
+    //    while (!file.atEnd())
+    //    {
+    //        QByteArray strRaw;
+    //        textStream >> strRaw;
+    //        const auto str = QString::fromUtf8(strRaw);
+
+    //        const auto path = str.toStdString();
+    //        auto *videoPath = libvlc_media_new_path(vlcInstance, path.c_str());
+    //        videoListWidget->addItem(path.c_str());
+
+    //        libvlc_media_list_lock(videoList);
+    //        libvlc_media_list_add_media(videoList, videoPath);
+    //        libvlc_media_list_unlock(videoList);
+
+    //        libvlc_media_release(videoPath);
+    //    }
+    //}
 }
 
 void MainWindow::InitializeLibVlc()
@@ -382,9 +409,10 @@ void MainWindow::InitializeConnect()
         const auto currentIndexOfSongList = GetCurrentItemIndex();  // 先保存一下当前编号，一会列表就改了
 
         // 如果删除的是当前播放的项目，则直接播放下一个或者停下来，不然即使删除了该项目也会继续播放
-        if (videoListWidget->currentItem()->text() == GetCurrentItemName())
+        if (libvlc_media_list_player_is_playing(videoPlayer) 
+         && videoListWidget->currentItem()->text() == GetCurrentItemName())
         {
-            if (Q_UNLIKELY(videoListWidget->count() == 1))  // 全都删完了就自动停下来
+            if Q_UNLIKELY(videoListWidget->count() == 1)  // 全都删完了就自动停下来
             {                                               // 判等于1是因为此时还未对videoListWidget进行删除操作
                 libvlc_media_list_player_stop(videoPlayer);
 
@@ -394,8 +422,23 @@ void MainWindow::InitializeConnect()
             {
                 libvlc_media_list_player_next(videoPlayer);
             }
+
+            libvlc_media_list_remove_index(videoList, currentIndexOfSongList);  // 在播放列表中移除此项
         }
-        libvlc_media_list_remove_index(videoList, currentIndexOfSongList);  // 在播放列表中移除此项
+        else    // 如果删除的不是当前播放的项目，则根据名字寻找该项目在实际播放列表中的位置然后删除之
+        {
+            const auto currentItemName = videoListWidget->currentItem()->text();
+            const auto count = libvlc_media_list_count(videoList);
+            for (int i = 0; i < count; ++i)
+            {
+                if Q_UNLIKELY(currentItemName == GetItemNameAtIndex(i)) // 通过名字寻找要删除的项目的编号
+                {
+                    libvlc_media_list_remove_index(videoList, i);
+
+                    break;
+                }
+            }
+        }
 
         libvlc_media_list_unlock(videoList);
         /*************unlock*************/
@@ -632,6 +675,7 @@ void MainWindow::OnPlayOrPauseClicked() noexcept
     }
 }
 
+// 保存媒体列表到文件中
 void MainWindow::SaveVideoList() noexcept
 {
     QFile file(VideoListPath);
@@ -641,6 +685,7 @@ void MainWindow::SaveVideoList() noexcept
     }
 
     QTextStream textStream(&file);
+    textStream.setCodec("utf-8");
     const auto videoListWidgetCount = videoListWidget->count();
     for (int i = 0; i < videoListWidgetCount; ++i)
     {
