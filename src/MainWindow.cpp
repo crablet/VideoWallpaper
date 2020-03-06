@@ -712,6 +712,8 @@ void MainWindow::ReadVideoList() noexcept
                 libvlc_media_release(videoPath);
             }
         }
+
+        emit VideoListCountChanged(videoListWidget->count());
     }
 }
 
