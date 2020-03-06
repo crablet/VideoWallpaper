@@ -679,6 +679,7 @@ void MainWindow::SaveVideoListAndQuitApp() noexcept
     qApp->quit();
 }
 
+// 从配置文件中读取媒体列表
 void MainWindow::ReadVideoList() noexcept
 {
     if (QFile file(VideoListPath); !file.open(QIODevice::Text | QIODevice::ReadOnly))
@@ -694,16 +695,22 @@ void MainWindow::ReadVideoList() noexcept
         {
             QString strRaw;
             textStream >> strRaw;
+            if Q_UNLIKELY(strRaw.isEmpty() || strRaw[0].isSpace())    // 处理误读到空格符，换行符的问题
+            {
+                continue;
+            }
+            else
+            {
+                const auto path = strRaw.toStdString();
+                auto *videoPath = libvlc_media_new_path(vlcInstance, path.c_str());
+                videoListWidget->addItem(path.c_str());
 
-            const auto path = strRaw.toStdString();
-            auto *videoPath = libvlc_media_new_path(vlcInstance, path.c_str());
-            videoListWidget->addItem(path.c_str());
+                libvlc_media_list_lock(videoList);
+                libvlc_media_list_add_media(videoList, videoPath);
+                libvlc_media_list_unlock(videoList);
 
-            libvlc_media_list_lock(videoList);
-            libvlc_media_list_add_media(videoList, videoPath);
-            libvlc_media_list_unlock(videoList);
-
-            libvlc_media_release(videoPath);
+                libvlc_media_release(videoPath);
+            }
         }
     }
 }
@@ -713,6 +720,7 @@ void MainWindow::EmitMediaListPlayerNextItemSet() noexcept
     emit MediaListPlayerNextItemSet();
 }
 
+// 获取桌面句柄，用于在桌面上播放
 HWND MainWindow::GetDesktopHwnd() const noexcept
 {
     auto hWnd = FindWindow(L"Progman", L"Program Manager");
@@ -759,7 +767,7 @@ QString MainWindow::GetCurrentItemName() noexcept
     return currentName;
 }
 
-// 根据获取位于播放列表index出的项目的名字
+// 获取位于播放列表index处的项目的名字
 QString MainWindow::GetItemNameAtIndex(int index) noexcept
 {
     libvlc_media_list_lock(videoList);

@@ -59,9 +59,9 @@ private:
 
     void DestoryLibVlc() noexcept;
 
-    HWND GetDesktopHwnd() const noexcept;
+    HWND GetDesktopHwnd() const noexcept;           // 获取桌面句柄，用于在桌面上播放
     QString GetCurrentItemName() noexcept;          // 获取正在播放的项目的名字，使用Windows表示法
-    QString GetItemNameAtIndex(int index) noexcept; // 根据获取位于播放列表index出的项目的名字
+    QString GetItemNameAtIndex(int index) noexcept; // 获取位于播放列表index处的项目的名字
     int GetCurrentItemIndex() noexcept;             // 获取正在播放的项目在播放列表中的index
 
     // 设置是否开机启动
