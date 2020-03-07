@@ -90,11 +90,12 @@ void MainWindow::InitializeUi()
     volumeSlider->setRange(0, 100);
     volumeSlider->setTickInterval(1);
     volumeSlider->setValue(volumeSlider->maximum());
+    volumeSlider->setToolTip(QString::number(volumeSlider->value()));
 
     videoControlLayout = new QHBoxLayout(this);
     videoControlLayout->addWidget(addVideoButton);      // 添加
     videoControlLayout->addWidget(deleteVideoButton);   // 删除
-    videoControlLayout->addWidget(playOrPauseButton);    // 开始/暂停
+    videoControlLayout->addWidget(playOrPauseButton);   // 开始/暂停
     videoControlLayout->addWidget(playPreviousButton);  // 上一个
     videoControlLayout->addWidget(stopPlayingButton);   // 停止
     videoControlLayout->addWidget(playNextButton);      // 下一个
@@ -353,6 +354,8 @@ void MainWindow::InitializeConnect()
         {
             volumeButton->setIcon(QIcon(":/icons/volume-down-fill.png"));
         }
+
+        volumeSlider->setToolTip(QString::number(value));   // 展示当前音量
     });
 
     // 选择列表循环播放的模式
