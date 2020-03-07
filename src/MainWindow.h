@@ -10,6 +10,7 @@
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QListWidget>
+#include <QListWidgetItem>
 #include <QComboBox>
 #include <QCheckBox>
 #include <QSlider>

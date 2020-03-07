@@ -283,7 +283,9 @@ void MainWindow::InitializeConnect()
                     // 注意不要连写path = toStdString().c_str()，当心变量生命周期
                     const auto stdStringPath = path.toStdString();
                     auto *videoPath = libvlc_media_new_path(vlcInstance, stdStringPath.c_str());
-                    videoListWidget->addItem(path);
+                    auto *item = new QListWidgetItem(path);
+                    item->setToolTip(path);
+                    videoListWidget->addItem(item);
 
                     libvlc_media_list_lock(videoList);
                     libvlc_media_list_add_media(videoList, videoPath);
@@ -706,7 +708,9 @@ void MainWindow::ReadVideoList() noexcept
             {
                 const auto path = strRaw.toStdString();
                 auto *videoPath = libvlc_media_new_path(vlcInstance, path.c_str());
-                videoListWidget->addItem(path.c_str());
+                auto *item = new QListWidgetItem(path.c_str());
+                item->setToolTip(path.c_str());
+                videoListWidget->addItem(item);
 
                 libvlc_media_list_lock(videoList);
                 libvlc_media_list_add_media(videoList, videoPath);
