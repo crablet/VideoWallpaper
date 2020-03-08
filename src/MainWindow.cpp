@@ -380,7 +380,7 @@ void MainWindow::InitializeConnect()
         }
         else
         {
-            // 暂不支持“随机播放”
+            QMessageBox::information(this, "警告", "暂不支持“随机播放”");
         }
     });
 
@@ -592,7 +592,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         }
         else
         {
-            // 配置文件出错
+            QMessageBox::information(this, "配置文件出错", "配置文件出错，请检查");
         }
     }
     else    // 还没写配置文件，则弹框询问
@@ -689,7 +689,7 @@ void MainWindow::ReadVideoList() noexcept
 {
     if (QFile file(VideoListPath); !file.open(QIODevice::Text | QIODevice::ReadOnly))
     {
-        // 打开失败
+        QMessageBox::information(this, "无法读取媒体列表", "无法读取媒体列表，请检查");
     }
     else
     {
