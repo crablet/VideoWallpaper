@@ -729,35 +729,6 @@ void MainWindow::EmitMediaListPlayerNextItemSet() noexcept
     emit MediaListPlayerNextItemSet();
 }
 
-// 获取桌面句柄，用于在桌面上播放
-HWND MainWindow::GetDesktopHwnd() const noexcept
-{
-    auto hWnd = FindWindow(L"Progman", L"Program Manager");
-    SendMessageTimeout(hWnd, 0x52C, 0, 0, SMTO_NORMAL, 1000, nullptr);	// 不知道是否可以为空指针
-
-    HWND hWndWorkW = nullptr;
-    do
-    {
-        hWndWorkW = FindWindowEx(nullptr, hWndWorkW, L"WorkerW", nullptr);
-        if (hWndWorkW)
-        {
-            if (FindWindowEx(hWndWorkW, nullptr, L"SHELLDLL_DefView", nullptr))
-            {
-                auto h = FindWindowEx(nullptr, hWndWorkW, L"WorkerW", nullptr);
-                while (h)
-                {
-                    SendMessage(h, WM_CLOSE, 0, 0);
-                    h = FindWindowEx(nullptr, hWndWorkW, L"WorkerW", nullptr);
-                }
-
-                break;
-            }
-        }
-    } while (true);
-
-    return hWnd;
-}
-
 // 获取正在播放的项目的名字，使用Windows表示法
 QString MainWindow::GetCurrentItemName() noexcept
 {

@@ -23,7 +23,8 @@ SOURCES += \
 HEADERS += \
     src/Constants.h \
     src/OnExitDialog.h \
-    src/MainWindow.h
+    src/MainWindow.h \
+    src/WindowsTools.h
 
 LIBS += \
     sdk/lib/libvlc.lib \
