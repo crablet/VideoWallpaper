@@ -441,6 +441,8 @@ void MainWindow::InitializeConnect()
     // 双击列表中的某项即可播放此项
     connect(videoListWidget, &QListWidget::itemDoubleClicked, [=]()
     {
+        emit ShouldInitializeThumbnailToolBar();
+
         const auto currentItemName = videoListWidget->currentItem()->text();
         const auto count = libvlc_media_list_count(videoList);
         for (int i = 0; i < count; ++i)
@@ -535,13 +537,6 @@ void MainWindow::InitializeConnect()
     // 当列表项变化之时应该做的处理
     connect(this, &MainWindow::VideoListCountChanged, [=](int count)
     {
-        static bool isThumbnainToolBarInitialized = false;
-        if (!isThumbnainToolBarInitialized)
-        {
-            InitializeThumbnailToolBar();
-            isThumbnainToolBarInitialized = true;
-        }
-
         if (count)  // 有媒体可以播放，于是这些按钮变为可用
         {
             playOrPauseButton->setEnabled(true);
@@ -572,6 +567,19 @@ void MainWindow::InitializeConnect()
     connect(this, &MainWindow::MediaListPlayerNextItemSet, [=]()
     {
         tray->setToolTip("正在播放 - " + QFileInfo(GetCurrentItemName()).fileName());   // 托盘提示改为当前播放项的名字
+    });
+
+    connect(this, &MainWindow::ShouldInitializeThumbnailToolBar, [=]()
+    {
+        static bool isThumbnainToolBarInitialized = false;
+        if (!isThumbnainToolBarInitialized)
+        {
+            InitializeThumbnailToolBar();
+            isThumbnainToolBarInitialized = true;
+
+            // 用完就取消掉这个信号槽，既然初始化过了就已经没用了，提升性能
+            disconnect(this, &MainWindow::ShouldInitializeThumbnailToolBar, nullptr, nullptr);
+        }
     });
 }
 
@@ -637,6 +645,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 // 当点击开始/暂停按钮时的动作，需要同步主界面上和ThumbnailToolBar上按钮的状态
 void MainWindow::OnPlayOrPauseClicked() noexcept
 {
+    emit ShouldInitializeThumbnailToolBar();
+
     if (!libvlc_media_list_player_is_playing(videoPlayer))  // 连第一遍播放都还没开始的，先让其播放
     {
         libvlc_media_list_player_play(videoPlayer);
@@ -720,7 +730,11 @@ void MainWindow::ReadVideoList() noexcept
             }
         }
 
-        emit VideoListCountChanged(videoListWidget->count());
+        playOrPauseButton->setEnabled(true);
+        deleteVideoButton->setEnabled(true);
+        playPreviousButton->setEnabled(true);
+        stopPlayingButton->setEnabled(true);
+        playNextButton->setEnabled(true);
     }
 }
 

@@ -91,6 +91,7 @@ private:
 signals:
     void VideoListCountChanged(int count);  // 当列表控件中的项目个数发生变化时会触发此信号，处理函数可以用来控制按钮的可使用性等等
     void MediaListPlayerNextItemSet();      // 正在播放的项目切换时会发出的信号
+    void ShouldInitializeThumbnailToolBar();
 
 private:
     QVBoxLayout *mainLayout;
