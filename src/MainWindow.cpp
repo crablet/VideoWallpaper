@@ -730,11 +730,14 @@ void MainWindow::ReadVideoList() noexcept
             }
         }
 
-        playOrPauseButton->setEnabled(true);
-        deleteVideoButton->setEnabled(true);
-        playPreviousButton->setEnabled(true);
-        stopPlayingButton->setEnabled(true);
-        playNextButton->setEnabled(true);
+        if Q_LIKELY(videoListWidget->count())
+        {
+            playOrPauseButton->setEnabled(true);
+            deleteVideoButton->setEnabled(true);
+            playPreviousButton->setEnabled(true);
+            stopPlayingButton->setEnabled(true);
+            playNextButton->setEnabled(true);
+        }
     }
 }
 
