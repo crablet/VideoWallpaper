@@ -295,6 +295,7 @@ void MainWindow::InitializeConnect()
                 }
             }
 
+            emit ShouldInitializeThumbnailToolBar();
             emit VideoListCountChanged(videoListWidget->count());
         }
     });
