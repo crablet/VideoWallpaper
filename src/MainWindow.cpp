@@ -109,6 +109,7 @@ void MainWindow::InitializeUi()
     ///////////////////////////////////////////////////////////
 
     videoListWidget = new QListWidget(this);
+    videoListWidget->setContextMenuPolicy(Qt::CustomContextMenu);   // 设置自定义右键菜单
 
     ///////////////////////////////////////////////////////////
 
@@ -386,51 +387,24 @@ void MainWindow::InitializeConnect()
     });
 
     // 删除按钮
-    connect(deleteVideoButton, &QToolButton::clicked, [=]()
+    connect(deleteVideoButton, &QToolButton::clicked, this, &MainWindow::DeleteVideo);
+
+    // 播放列表的右键删除菜单
+    connect(videoListWidget, &QListWidget::customContextMenuRequested, [=](const QPoint &pos)
     {
-        /************lock*************/
-        libvlc_media_list_lock(videoList);
-
-        // 如果删除的是当前播放的项目，则直接播放下一个或者停下来，不然即使删除了该项目也会继续播放
-        if (libvlc_media_list_player_is_playing(videoPlayer) 
-         && videoListWidget->currentItem()->text() == GetCurrentItemName())
+        if (videoListWidget->itemAt(pos))
         {
-            const auto currentIndexOfSongList = GetCurrentItemIndex();  // 先保存一下当前编号，一会列表就改了
-
-            if Q_UNLIKELY(videoListWidget->count() == 1)  // 全都删完了就自动停下来
-            {                                               // 判等于1是因为此时还未对videoListWidget进行删除操作
-                libvlc_media_list_player_stop(videoPlayer);
-
-                tray->setToolTip("无正在播放项目");    // 停下来了自然没有项目正在播放
-            }
-            else
+            auto *menu = new QMenu(this);
+            auto *deleteAction = new QAction("删除", menu);
+            connect(deleteAction, &QAction::triggered, [=]()
             {
-                libvlc_media_list_player_next(videoPlayer);
-            }
+                DeleteVideo();
 
-            libvlc_media_list_remove_index(videoList, currentIndexOfSongList);  // 在播放列表中移除此项
+                delete menu;
+            });
+            menu->addAction(deleteAction);
+            menu->exec(QCursor::pos());
         }
-        else    // 如果删除的不是当前播放的项目，则根据名字寻找该项目在实际播放列表中的位置然后删除之
-        {
-            const auto currentItemName = videoListWidget->currentItem()->text();
-            const auto count = libvlc_media_list_count(videoList);
-            for (int i = 0; i < count; ++i)
-            {
-                if Q_UNLIKELY(currentItemName == GetItemNameAtIndex(i)) // 通过名字寻找要删除的项目的编号
-                {
-                    libvlc_media_list_remove_index(videoList, i);
-
-                    break;
-                }
-            }
-        }
-
-        libvlc_media_list_unlock(videoList);
-        /*************unlock*************/
-
-        delete videoListWidget->takeItem(videoListWidget->currentRow());    // takeItem返回的指针需要手动释放
-
-        emit VideoListCountChanged(videoListWidget->count());   // 发射信号通知列表项已发生改变
     });
 
     // 只有选中播放列表中的项目才允许删除，防止误触
@@ -745,6 +719,53 @@ void MainWindow::ReadVideoList() noexcept
 void MainWindow::EmitMediaListPlayerNextItemSet() noexcept
 {
     emit MediaListPlayerNextItemSet();
+}
+
+void MainWindow::DeleteVideo() noexcept
+{
+    /************lock*************/
+    libvlc_media_list_lock(videoList);
+
+    // 如果删除的是当前播放的项目，则直接播放下一个或者停下来，不然即使删除了该项目也会继续播放
+    if (libvlc_media_list_player_is_playing(videoPlayer)
+     && videoListWidget->currentItem()->text() == GetCurrentItemName())
+    {
+        const auto currentIndexOfSongList = GetCurrentItemIndex();  // 先保存一下当前编号，一会列表就改了
+
+        if Q_UNLIKELY(videoListWidget->count() == 1)  // 全都删完了就自动停下来
+        {                                               // 判等于1是因为此时还未对videoListWidget进行删除操作
+            libvlc_media_list_player_stop(videoPlayer);
+
+            tray->setToolTip("无正在播放项目");    // 停下来了自然没有项目正在播放
+        }
+        else
+        {
+            libvlc_media_list_player_next(videoPlayer);
+        }
+
+        libvlc_media_list_remove_index(videoList, currentIndexOfSongList);  // 在播放列表中移除此项
+    }
+    else    // 如果删除的不是当前播放的项目，则根据名字寻找该项目在实际播放列表中的位置然后删除之
+    {
+        const auto currentItemName = videoListWidget->currentItem()->text();
+        const auto count = libvlc_media_list_count(videoList);
+        for (int i = 0; i < count; ++i)
+        {
+            if Q_UNLIKELY(currentItemName == GetItemNameAtIndex(i)) // 通过名字寻找要删除的项目的编号
+            {
+                libvlc_media_list_remove_index(videoList, i);
+
+                break;
+            }
+        }
+    }
+
+    libvlc_media_list_unlock(videoList);
+    /*************unlock*************/
+
+    delete videoListWidget->takeItem(videoListWidget->currentRow());    // takeItem返回的指针需要手动释放
+
+    emit VideoListCountChanged(videoListWidget->count());   // 发射信号通知列表项已发生改变
 }
 
 // 获取正在播放的项目的名字，使用Windows表示法

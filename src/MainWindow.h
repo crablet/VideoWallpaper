@@ -23,6 +23,7 @@
 #include <QSystemTrayIcon>
 #include <QIcon>
 #include <QMenu>
+#include <QPoint>
 #include <QAction>
 #include <QCloseEvent>
 #include <QToolButton>
@@ -81,6 +82,8 @@ private:
     void ReadVideoList() noexcept;
 
     void EmitMediaListPlayerNextItemSet() noexcept;
+
+    void DeleteVideo() noexcept;
 
     // 此函数声明成友元是为了user_data中能传this指针然后通过this访问private的EmitMediaListPlayerNextItemSet
     friend int libvlc_event_attach(libvlc_event_manager_t *p_event_manager,
