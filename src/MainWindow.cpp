@@ -712,6 +712,8 @@ void MainWindow::ReadVideoList() noexcept
             playPreviousButton->setEnabled(true);
             stopPlayingButton->setEnabled(true);
             playNextButton->setEnabled(true);
+
+            emit ShouldInitializeThumbnailToolBar();
         }
     }
 }
