@@ -1,5 +1,7 @@
 ﻿#include "MainWindow.h"
 
+#include <QDebug>
+
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
 {
@@ -138,66 +140,6 @@ void MainWindow::InitializeUi()
     tray->show();
 }
 
-void MainWindow::InitializeSettings()
-{
-    QDir dirChecker;
-    if (!dirChecker.exists("userdata")) // 确保userdata文件夹存在，以后可以换成std::filesystem
-    {
-        dirChecker.mkdir("userdata");
-    }
-
-    settings = new QSettings("userdata/config.ini", QSettings::IniFormat, this);
-
-    // 开机启动
-    if (!settings->contains("RunAtStartup"))    // 如果不存在RunAtStartup，可能是首次运行，则做默认初始化
-    {
-        settings->setValue("RunAtStartup", false);  // 默认不进行开机启动
-    }
-    else    // 存在RunAtStartup配置，则根据配置情况执行
-    {
-        SetRunAtStartup(settings->value("RunAtStartup").toBool());  // 根据配置文件设置是否开机启动
-    }
-
-    // 列表播放模式
-    if (!settings->contains("PlaybackMode"))    // 如果不存在PlaybackMode，可能是首次运行，则做默认初始化
-    {
-        settings->setValue("PlaybackMode", "default");  // 默认为“不循环”，即libvlc_playback_mode_default
-        modeComboBox->setCurrentText("不循环");
-    }
-    else    // 存在PlaybackMode配置，则根据配置情况执行
-    {
-        auto playbackMode = settings->value("PlaybackMode").toString();
-        if (playbackMode == "repeat")
-        {
-            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_repeat);
-            modeComboBox->setCurrentText("单曲循环");
-        }
-        else if (playbackMode == "loop")
-        {
-            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_loop);
-            modeComboBox->setCurrentText("列表循环");
-        }
-        else if (playbackMode == "default")
-        {
-            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_default);
-            modeComboBox->setCurrentText("不循环");
-        }
-        else
-        {
-            // 暂不支持“随机播放”
-            modeComboBox->setCurrentText("随机播放");
-        }
-
-        // 以上一大段和modeComboBox的信号处理函数重合很大，不太好，需要改进
-    }
-
-    ReadVideoList();
-    if (runAtStartupCheckBox->isChecked() && videoListWidget->count())   // 如果指明需要开机启动且之前有保存播放列表，那么就播放
-    {
-        libvlc_media_list_player_play(videoPlayer);
-    }
-}
-
 void MainWindow::InitializeLibVlc()
 {
     vlcInstance = libvlc_new(0, nullptr);
@@ -211,57 +153,16 @@ void MainWindow::InitializeLibVlc()
     libvlc_media_player_release(innerPlayer);
 
     videoPlayerEventManager = libvlc_media_list_player_event_manager(videoPlayer);
-    libvlc_event_attach(videoPlayerEventManager, 
-                        libvlc_MediaListPlayerNextItemSet, 
-                        [](const struct libvlc_event_t*, void *ptr) 
+    libvlc_event_attach(videoPlayerEventManager,
+                        libvlc_MediaListPlayerNextItemSet,
+                        [](const struct libvlc_event_t *, void *ptr)
                         {
-                            static_cast<MainWindow*>(ptr)->EmitMediaListPlayerNextItemSet(); 
-                        }, 
+                            static_cast<MainWindow *>(ptr)->EmitMediaListPlayerNextItemSet();
+                        },
                         this);
     // 注意：在C库中使用C++的成员函数作为回调函数，可以在C库设置回调函数的函数的void*数据项中传this指针，
     // 然后通过this再调用真正的回调函数，将此C库函数作为此类的友元函数可以减少破坏封装的风险，
     // 这样只需要将此回调函数声明为private，否则则需要将此回调函数作为public
-}
-
-void MainWindow::InitializeThumbnailToolBar()
-{
-    thumbnailToolBar = new QWinThumbnailToolBar(this);
-    thumbnailToolBar->setWindow(this->windowHandle());
-
-    playPreviousThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
-    playPreviousThumbnailButton->setIcon(PlayPreviousButtonIcon);
-    playPreviousThumbnailButton->setToolTip("上一个");
-    playPreviousThumbnailButton->setEnabled(true);
-    connect(playPreviousThumbnailButton, &QWinThumbnailToolButton::clicked, [=]()
-    {
-        libvlc_media_list_player_previous(videoPlayer);
-    });
-
-    playOrPauseThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
-    playOrPauseThumbnailButton->setIcon(PlayButtonIcon);
-    playOrPauseThumbnailButton->setToolTip("开始");
-    playOrPauseThumbnailButton->setEnabled(true);
-    connect(playOrPauseThumbnailButton, &QWinThumbnailToolButton::clicked, this, &MainWindow::OnPlayOrPauseClicked);
-
-    playNextThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
-    playNextThumbnailButton->setIcon(PlayNextButtonIcon);
-    playNextThumbnailButton->setToolTip("下一个");
-    playNextThumbnailButton->setEnabled(true);
-    connect(playNextThumbnailButton, &QWinThumbnailToolButton::clicked, [=]()
-    {
-        libvlc_media_list_player_next(videoPlayer);
-    });
-
-    thumbnailToolBar->addButton(playPreviousThumbnailButton);
-    thumbnailToolBar->addButton(playOrPauseThumbnailButton);
-    thumbnailToolBar->addButton(playNextThumbnailButton);
-}
-
-void MainWindow::DestoryLibVlc() noexcept
-{
-    libvlc_media_list_player_release(videoPlayer);
-    libvlc_media_list_release(videoList);
-    libvlc_release(vlcInstance);
 }
 
 void MainWindow::InitializeConnect()
@@ -363,7 +264,7 @@ void MainWindow::InitializeConnect()
     });
 
     // 选择列表循环播放的模式
-    connect(modeComboBox, QOverload<const QString&>::of(&QComboBox::currentIndexChanged), [=](const QString &currentText)
+    connect(modeComboBox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged), [=](const QString &currentText)
     {
         if (currentText == "单曲循环")
         {
@@ -397,11 +298,11 @@ void MainWindow::InitializeConnect()
             auto *menu = new QMenu(this);
             auto *deleteAction = new QAction("删除", menu);
             connect(deleteAction, &QAction::triggered, [=]()
-            {
-                DeleteVideo();
+                {
+                    DeleteVideo();
 
-                delete menu;
-            });
+                    delete menu;
+                });
             menu->addAction(deleteAction);
             menu->exec(QCursor::pos());
         }
@@ -439,66 +340,66 @@ void MainWindow::InitializeConnect()
         SetRunAtStartup(state == Qt::Checked);
     });
 
-    connect(aspectRatioComboBox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged), 
-        [=](const QString &ratioText)
+    connect(aspectRatioComboBox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
+    [=](const QString &ratioText)
+    {
+        auto *player = libvlc_media_list_player_get_media_player(videoPlayer);
+        if (ratioText == "默认")      // 同“适应”
         {
-            auto *player = libvlc_media_list_player_get_media_player(videoPlayer);
-            if (ratioText == "默认")      // 同“适应”
+            libvlc_video_set_aspect_ratio(player, nullptr);
+        }
+        else if (ratioText == "填充") // 图片等比缩放，优先适应最小边
+        {
+            if (libvlc_media_list_player_is_playing(videoPlayer))
             {
-                libvlc_video_set_aspect_ratio(player, nullptr);
-            }
-            else if (ratioText == "填充") // 图片等比缩放，优先适应最小边
-            {
-                if (libvlc_media_list_player_is_playing(videoPlayer))
+                unsigned int videoWidth = 0, videoHeight = 0;
+                libvlc_video_get_size(player, 0, &videoWidth, &videoHeight);
+
+                const auto width = GetSystemMetrics(SM_CXSCREEN);   // 不能是SM_CXFULLSCREEN
+                const auto height = GetSystemMetrics(SM_CYSCREEN);  // 不能是SM_CYFULLSCREEN
+                if (width < height)
                 {
-                    unsigned int videoWidth = 0, videoHeight = 0;
-                    libvlc_video_get_size(player, 0, &videoWidth, &videoHeight);
-
-                    const auto width = GetSystemMetrics(SM_CXSCREEN);   // 不能是SM_CXFULLSCREEN
-                    const auto height = GetSystemMetrics(SM_CYSCREEN);  // 不能是SM_CYFULLSCREEN
-                    if (width < height)
-                    {
-                        const double scale = 1.0 * width / videoWidth;
-                        videoHeight = static_cast<unsigned int>(1.0 * videoHeight * scale);
-                        videoWidth = width;
-                    }
-                    else
-                    {
-                        const double scale = 1.0 * height / videoHeight;
-                        videoWidth = static_cast<unsigned int>(1.0 * videoWidth * scale);
-                        videoHeight = height;
-                    }
-
-                    const auto gcd = std::gcd(videoWidth, videoHeight);
-                    const auto ratioString = std::to_string(videoWidth / gcd) + ':' + std::to_string(videoHeight / gcd);
-                    libvlc_video_set_aspect_ratio(player, ratioString.c_str());
+                    const double scale = 1.0 * width / videoWidth;
+                    videoHeight = static_cast<unsigned int>(1.0 * videoHeight * scale);
+                    videoWidth = width;
                 }
                 else
                 {
-                    QMessageBox::information(this, "提示", "在没有正在播放的项目时此选项无效");
+                    const double scale = 1.0 * height / videoHeight;
+                    videoWidth = static_cast<unsigned int>(1.0 * videoWidth * scale);
+                    videoHeight = height;
                 }
-            }
-            else if (ratioText == "适应") // 图片等比缩放，保持图片比例的同时最大化显示图片
-            {
-                libvlc_video_set_aspect_ratio(player, nullptr);
-            }
-            else if (ratioText == "拉伸") // 图片根据屏幕显示分辨率拉伸，让一张图片就占满桌面
-            {
-                const auto width = GetSystemMetrics(SM_CXSCREEN);   // 不能是SM_CXFULLSCREEN
-                const auto height = GetSystemMetrics(SM_CYSCREEN);  // 不能是SM_CYFULLSCREEN
-                const auto gcd = std::gcd(width, height);
 
-                const auto ratioString = std::to_string(width / gcd) + ':' + std::to_string(height / gcd);
+                const auto gcd = std::gcd(videoWidth, videoHeight);
+                const auto ratioString = std::to_string(videoWidth / gcd) + ':' + std::to_string(videoHeight / gcd);
                 libvlc_video_set_aspect_ratio(player, ratioString.c_str());
             }
             else
             {
-                const auto ratioTextStdString = ratioText.toStdString();
-                libvlc_video_set_aspect_ratio(player, ratioTextStdString.c_str());
+                QMessageBox::information(this, "提示", "在没有正在播放的项目时此选项无效");
             }
+        }
+        else if (ratioText == "适应") // 图片等比缩放，保持图片比例的同时最大化显示图片
+        {
+            libvlc_video_set_aspect_ratio(player, nullptr);
+        }
+        else if (ratioText == "拉伸") // 图片根据屏幕显示分辨率拉伸，让一张图片就占满桌面
+        {
+            const auto width = GetSystemMetrics(SM_CXSCREEN);   // 不能是SM_CXFULLSCREEN
+            const auto height = GetSystemMetrics(SM_CYSCREEN);  // 不能是SM_CYFULLSCREEN
+            const auto gcd = std::gcd(width, height);
 
-            libvlc_media_player_release(player);
-        });
+            const auto ratioString = std::to_string(width / gcd) + ':' + std::to_string(height / gcd);
+            libvlc_video_set_aspect_ratio(player, ratioString.c_str());
+        }
+        else
+        {
+            const auto ratioTextStdString = ratioText.toStdString();
+            libvlc_video_set_aspect_ratio(player, ratioTextStdString.c_str());
+        }
+
+        libvlc_media_player_release(player);
+    });
 
     // 来自托盘的信号的处理
     connect(tray, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason)
@@ -556,6 +457,107 @@ void MainWindow::InitializeConnect()
             disconnect(this, &MainWindow::ShouldInitializeThumbnailToolBar, nullptr, nullptr);
         }
     });
+}
+
+void MainWindow::InitializeSettings()
+{
+    QDir dirChecker;
+    if (!dirChecker.exists("userdata")) // 确保userdata文件夹存在，以后可以换成std::filesystem
+    {
+        dirChecker.mkdir("userdata");
+    }
+
+    settings = new QSettings("userdata/config.ini", QSettings::IniFormat, this);
+
+    // 开机启动
+    if (!settings->contains("RunAtStartup"))    // 如果不存在RunAtStartup，可能是首次运行，则做默认初始化
+    {
+        settings->setValue("RunAtStartup", false);  // 默认不进行开机启动
+    }
+    else    // 存在RunAtStartup配置，则根据配置情况执行
+    {
+        SetRunAtStartup(settings->value("RunAtStartup").toBool());  // 根据配置文件设置是否开机启动
+    }
+
+    // 列表播放模式
+    if (!settings->contains("PlaybackMode"))    // 如果不存在PlaybackMode，可能是首次运行，则做默认初始化
+    {
+        settings->setValue("PlaybackMode", "default");  // 默认为“不循环”，即libvlc_playback_mode_default
+        modeComboBox->setCurrentText("不循环");
+    }
+    else    // 存在PlaybackMode配置，则根据配置情况执行
+    {
+        auto playbackMode = settings->value("PlaybackMode").toString();
+        if (playbackMode == "repeat")
+        {
+            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_repeat);
+            modeComboBox->setCurrentText("单曲循环");
+        }
+        else if (playbackMode == "loop")
+        {
+            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_loop);
+            modeComboBox->setCurrentText("列表循环");
+        }
+        else if (playbackMode == "default")
+        {
+            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_default);
+            modeComboBox->setCurrentText("不循环");
+        }
+        else
+        {
+            // 暂不支持“随机播放”
+            modeComboBox->setCurrentText("随机播放");
+        }
+
+        // 以上一大段和modeComboBox的信号处理函数重合很大，不太好，需要改进
+    }
+
+    //ReadVideoList();
+    //if (runAtStartupCheckBox->isChecked() && videoListWidget->count())   // 如果指明需要开机启动且之前有保存播放列表，那么就播放
+    //{
+    //    libvlc_media_list_player_play(videoPlayer);
+    //}
+}
+
+void MainWindow::InitializeThumbnailToolBar()
+{
+    thumbnailToolBar = new QWinThumbnailToolBar(this);
+    thumbnailToolBar->setWindow(this->windowHandle());
+
+    playPreviousThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
+    playPreviousThumbnailButton->setIcon(PlayPreviousButtonIcon);
+    playPreviousThumbnailButton->setToolTip("上一个");
+    playPreviousThumbnailButton->setEnabled(true);
+    connect(playPreviousThumbnailButton, &QWinThumbnailToolButton::clicked, [=]()
+    {
+        libvlc_media_list_player_previous(videoPlayer);
+    });
+
+    playOrPauseThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
+    playOrPauseThumbnailButton->setIcon(PlayButtonIcon);
+    playOrPauseThumbnailButton->setToolTip("开始");
+    playOrPauseThumbnailButton->setEnabled(true);
+    connect(playOrPauseThumbnailButton, &QWinThumbnailToolButton::clicked, this, &MainWindow::OnPlayOrPauseClicked);
+
+    playNextThumbnailButton = new QWinThumbnailToolButton(thumbnailToolBar);
+    playNextThumbnailButton->setIcon(PlayNextButtonIcon);
+    playNextThumbnailButton->setToolTip("下一个");
+    playNextThumbnailButton->setEnabled(true);
+    connect(playNextThumbnailButton, &QWinThumbnailToolButton::clicked, [=]()
+    {
+        libvlc_media_list_player_next(videoPlayer);
+    });
+
+    thumbnailToolBar->addButton(playPreviousThumbnailButton);
+    thumbnailToolBar->addButton(playOrPauseThumbnailButton);
+    thumbnailToolBar->addButton(playNextThumbnailButton);
+}
+
+void MainWindow::DestoryLibVlc() noexcept
+{
+    libvlc_media_list_player_release(videoPlayer);
+    libvlc_media_list_release(videoList);
+    libvlc_release(vlcInstance);
 }
 
 // 点击窗体右上角关闭按钮时会触发的事件，若已有配置则根据配置执行，若没有配置则弹框询问动作
@@ -622,8 +624,13 @@ void MainWindow::OnPlayOrPauseClicked() noexcept
 {
     emit ShouldInitializeThumbnailToolBar();
 
+    qDebug() << "OnPlayOrPauseClicked";
+
     if (!libvlc_media_list_player_is_playing(videoPlayer))  // 连第一遍播放都还没开始的，先让其播放
     {
+        qDebug() << "not playing";
+        qDebug() << (videoPlayer == nullptr);
+
         libvlc_media_list_player_play(videoPlayer);
 
         playOrPauseButton->setIcon(PauseButtonIcon);
@@ -634,6 +641,8 @@ void MainWindow::OnPlayOrPauseClicked() noexcept
     }
     else // 已经开始播放的
     {
+        qDebug() << "is playing";
+
         libvlc_media_list_player_pause(videoPlayer);
 
         playOrPauseButton->setIcon(PlayButtonIcon);
