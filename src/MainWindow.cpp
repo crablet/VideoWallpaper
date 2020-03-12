@@ -296,11 +296,11 @@ void MainWindow::InitializeConnect()
             auto *menu = new QMenu(this);
             auto *deleteAction = new QAction("删除", menu);
             connect(deleteAction, &QAction::triggered, [=]()
-                {
-                    DeleteVideo();
+            {
+                DeleteVideo();
 
-                    delete menu;
-                });
+                delete menu;
+            });
             menu->addAction(deleteAction);
             menu->exec(QCursor::pos());
         }
@@ -419,9 +419,13 @@ void MainWindow::InitializeConnect()
             stopPlayingButton->setEnabled(true);
             playNextButton->setEnabled(true);
 
-            playOrPauseThumbnailButton->setEnabled(true);
-            playNextThumbnailButton->setEnabled(true);
-            playPreviousThumbnailButton->setEnabled(true);
+            // 这一块总是出现空指针错误，宁愿多判断一次也不调整逻辑了，不然控制流会很混乱
+            if (playOrPauseThumbnailButton && playNextThumbnailButton && playPreviousThumbnailButton)
+            {
+                playOrPauseThumbnailButton->setEnabled(true);
+                playNextThumbnailButton->setEnabled(true);
+                playPreviousThumbnailButton->setEnabled(true);
+            }
         }
         else        // 没有媒体可以播放，于是这些按钮变为不可用
         {
@@ -431,9 +435,13 @@ void MainWindow::InitializeConnect()
             stopPlayingButton->setDisabled(true);
             playNextButton->setDisabled(true);
 
-            playOrPauseThumbnailButton->setEnabled(false);
-            playNextThumbnailButton->setEnabled(false);
-            playPreviousThumbnailButton->setEnabled(false);
+            // 这一块总是出现空指针错误，宁愿多判断一次也不调整逻辑了，不然控制流会很混乱
+            if (playOrPauseThumbnailButton && playNextThumbnailButton && playPreviousThumbnailButton)
+            {
+                playOrPauseThumbnailButton->setEnabled(false);
+                playNextThumbnailButton->setEnabled(false);
+                playPreviousThumbnailButton->setEnabled(false);
+            }
         }
     });
 
@@ -713,8 +721,6 @@ void MainWindow::ReadVideoList() noexcept
             playPreviousButton->setEnabled(true);
             stopPlayingButton->setEnabled(true);
             playNextButton->setEnabled(true);
-
-            emit ShouldInitializeThumbnailToolBar();
         }
     }
 }
