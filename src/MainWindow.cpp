@@ -1,7 +1,5 @@
 ﻿#include "MainWindow.h"
 
-#include <QDebug>
-
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
 {
@@ -155,9 +153,9 @@ void MainWindow::InitializeLibVlc()
     videoPlayerEventManager = libvlc_media_list_player_event_manager(videoPlayer);
     libvlc_event_attach(videoPlayerEventManager,
                         libvlc_MediaListPlayerNextItemSet,
-                        [](const struct libvlc_event_t *, void *ptr)
+                        [](const struct libvlc_event_t*, void *ptr)
                         {
-                            static_cast<MainWindow *>(ptr)->EmitMediaListPlayerNextItemSet();
+                            static_cast<MainWindow*>(ptr)->EmitMediaListPlayerNextItemSet();
                         },
                         this);
     // 注意：在C库中使用C++的成员函数作为回调函数，可以在C库设置回调函数的函数的void*数据项中传this指针，
@@ -512,11 +510,11 @@ void MainWindow::InitializeSettings()
         // 以上一大段和modeComboBox的信号处理函数重合很大，不太好，需要改进
     }
 
-    //ReadVideoList();
-    //if (runAtStartupCheckBox->isChecked() && videoListWidget->count())   // 如果指明需要开机启动且之前有保存播放列表，那么就播放
-    //{
-    //    libvlc_media_list_player_play(videoPlayer);
-    //}
+    ReadVideoList();
+    if (runAtStartupCheckBox->isChecked() && videoListWidget->count())   // 如果指明需要开机启动且之前有保存播放列表，那么就播放
+    {
+        libvlc_media_list_player_play(videoPlayer);
+    }
 }
 
 void MainWindow::InitializeThumbnailToolBar()
@@ -598,9 +596,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         }
         else if (result == OnExitDialog::ExitWithoutSaving)     // 直接退出且不保存配置
         {
-            SaveVideoList();
-
-            qApp->quit();
+            SaveVideoListAndQuitApp();
         }
         else if (result == OnExitDialog::ExitAndSave)           // 直接退出且保存配置
         {
@@ -624,13 +620,8 @@ void MainWindow::OnPlayOrPauseClicked() noexcept
 {
     emit ShouldInitializeThumbnailToolBar();
 
-    qDebug() << "OnPlayOrPauseClicked";
-
     if (!libvlc_media_list_player_is_playing(videoPlayer))  // 连第一遍播放都还没开始的，先让其播放
     {
-        qDebug() << "not playing";
-        qDebug() << (videoPlayer == nullptr);
-
         libvlc_media_list_player_play(videoPlayer);
 
         playOrPauseButton->setIcon(PauseButtonIcon);
@@ -641,8 +632,6 @@ void MainWindow::OnPlayOrPauseClicked() noexcept
     }
     else // 已经开始播放的
     {
-        qDebug() << "is playing";
-
         libvlc_media_list_player_pause(videoPlayer);
 
         playOrPauseButton->setIcon(PlayButtonIcon);
@@ -683,7 +672,10 @@ void MainWindow::ReadVideoList() noexcept
 {
     if (QFile file(VideoListPath); !file.open(QIODevice::Text | QIODevice::ReadOnly))
     {
-        QMessageBox::information(this, "无法读取媒体列表", "无法读取媒体列表，请检查");
+        if (file.exists())
+        {
+            QMessageBox::information(this, "无法读取媒体列表", "无法读取媒体列表，请检查");
+        }
     }
     else
     {

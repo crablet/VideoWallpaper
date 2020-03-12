@@ -70,9 +70,6 @@ private:
 
     void closeEvent(QCloseEvent *event) override;
 
-    // 当点击开始/暂停按钮时的动作，需要同步主界面上和ThumbnailToolBar上按钮的状态
-    void OnPlayOrPauseClicked() noexcept;
-
     // 保存媒体列表到文件中
     void SaveVideoList() noexcept;
 
@@ -95,6 +92,10 @@ signals:
     void VideoListCountChanged(int count);  // 当列表控件中的项目个数发生变化时会触发此信号，处理函数可以用来控制按钮的可使用性等等
     void MediaListPlayerNextItemSet();      // 正在播放的项目切换时会发出的信号
     void ShouldInitializeThumbnailToolBar();
+
+public slots:
+    // 当点击开始/暂停按钮时的动作，需要同步主界面上和ThumbnailToolBar上按钮的状态
+    void OnPlayOrPauseClicked() noexcept;
 
 private:
     QVBoxLayout *mainLayout;
