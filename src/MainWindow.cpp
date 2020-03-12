@@ -294,15 +294,13 @@ void MainWindow::InitializeConnect()
         if (videoListWidget->itemAt(pos))
         {
             auto *menu = new QMenu(this);
-            auto *deleteAction = new QAction("删除", menu);
-            connect(deleteAction, &QAction::triggered, [=]()
-            {
-                DeleteVideo();
 
-                delete menu;
-            });
+            auto *deleteAction = new QAction("删除", menu);
+            connect(deleteAction, &QAction::triggered, this, &MainWindow::DeleteVideo);
+
             menu->addAction(deleteAction);
             menu->exec(QCursor::pos());
+            delete menu;
         }
     });
 

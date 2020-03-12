@@ -80,8 +80,6 @@ private:
 
     void EmitMediaListPlayerNextItemSet() noexcept;
 
-    void DeleteVideo() noexcept;
-
     // 此函数声明成友元是为了user_data中能传this指针然后通过this访问private的EmitMediaListPlayerNextItemSet
     friend int libvlc_event_attach(libvlc_event_manager_t *p_event_manager,
                                    libvlc_event_type_t i_event_type,
@@ -96,6 +94,8 @@ signals:
 public slots:
     // 当点击开始/暂停按钮时的动作，需要同步主界面上和ThumbnailToolBar上按钮的状态
     void OnPlayOrPauseClicked() noexcept;
+
+    void DeleteVideo() noexcept;
 
 private:
     QVBoxLayout *mainLayout;
