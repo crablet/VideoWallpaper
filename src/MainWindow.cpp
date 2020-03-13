@@ -31,6 +31,7 @@ void MainWindow::InitializeUi()
     aspectRatioComboBox->setStyleSheet(ComboBoxStyle);
 
     runAtStartupCheckBox = new QCheckBox(RunAtStartupCheckBoxText);
+    runAtStartupCheckBox->setLayoutDirection(Qt::RightToLeft);
 
     modeSettingsLayout = new QHBoxLayout(this);
     modeSettingsLayout->addWidget(modeLabel);
