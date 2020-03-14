@@ -4,6 +4,9 @@
 #pragma execution_character_set("utf-8")
 
 #include <Windows.h>
+#include <ShellScalingApi.h>
+
+#pragma comment(lib, "Shcore.lib")
 
 // 获取桌面句柄，用于在桌面上播放视频
 inline HWND GetDesktopHwnd() noexcept

@@ -9,6 +9,9 @@ int main(int argc, char *argv[])
     {
         CloseHandle(mutexHandle);   // 其实不写也没事，后面else为了代码好看点就没写
 
+        SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);  // 适配高DPI
+        MessageBox(nullptr, L"已有另一VideoWallpaper实例正在运行", L"提示", MB_ICONINFORMATION | MB_OK);
+
         return 0;
     }
     else    // 能够成功获取锁，证明是唯一运行的实体，则允许继续执行
