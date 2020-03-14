@@ -9,7 +9,7 @@ MainWindow::MainWindow(QWidget *parent)
     InitializeSettings();   // 根据配置文件做正式运行前最后的设置
 }
 
-MainWindow::~MainWindow()
+MainWindow::~MainWindow() noexcept
 {
     DestoryLibVlc();
 }
@@ -167,39 +167,7 @@ void MainWindow::InitializeLibVlc()
 void MainWindow::InitializeConnect()
 {
     // 添加视频
-    connect(addVideoButton, &QToolButton::clicked, [=]()
-    {
-        auto fileNames = QFileDialog::getOpenFileNames(this, "选择媒体文件");
-        if (!fileNames.empty())
-        {
-            for (const auto &fileName : fileNames)
-            {
-                // 解决对于路径Qt使用/而libvlc只认本地规则（即\\）的问题，path即为转换后的路径
-                const auto path = QDir::toNativeSeparators(fileName);
-
-                // 当列表中没有重复项时才允许添加进去，这里做了个去重
-                if (videoListWidget->findItems(path, Qt::MatchFixedString | Qt::MatchCaseSensitive).empty())
-                {
-                    // 先转为std::string，然后再使用c_str()取得const char*
-                    // 注意不要连写path = toStdString().c_str()，当心变量生命周期
-                    const auto stdStringPath = path.toStdString();
-                    auto *videoPath = libvlc_media_new_path(vlcInstance, stdStringPath.c_str());
-                    auto *item = new QListWidgetItem(path);
-                    item->setToolTip(path);
-                    videoListWidget->addItem(item);
-
-                    libvlc_media_list_lock(videoList);
-                    libvlc_media_list_add_media(videoList, videoPath);
-                    libvlc_media_list_unlock(videoList);
-
-                    libvlc_media_release(videoPath);
-                }
-            }
-
-            emit ShouldInitializeThumbnailToolBar();
-            emit VideoListCountChanged(videoListWidget->count());
-        }
-    });
+    connect(addVideoButton, &QToolButton::clicked, this, &MainWindow::AddVideo);
 
     // 播放/暂停视频
     connect(playOrPauseButton, &QToolButton::clicked, this, &MainWindow::OnPlayOrPauseClicked);
@@ -292,17 +260,24 @@ void MainWindow::InitializeConnect()
     // 播放列表的右键删除菜单
     connect(videoListWidget, &QListWidget::customContextMenuRequested, [=](const QPoint &pos)
     {
-        if (videoListWidget->itemAt(pos))
+        auto *menu = new QMenu;
+        QAction *action;
+        if (videoListWidget->itemAt(pos))   // 如果点击的地方有项目，那就展示“删除”功能
         {
-            auto *menu = new QMenu(this);
-
-            auto *deleteAction = new QAction("删除", menu);
-            connect(deleteAction, &QAction::triggered, this, &MainWindow::DeleteVideo);
-
-            menu->addAction(deleteAction);
-            menu->exec(QCursor::pos());
-            delete menu;
+            action = new QAction("删除");
+            connect(action, &QAction::triggered, this, &MainWindow::DeleteVideo);
         }
+        else                                // 如果点击的地方没项目，那就展示“添加”功能
+        {
+            action = new QAction("添加");
+            connect(action, &QAction::triggered, this, &MainWindow::AddVideo);
+        }
+
+        menu->addAction(action);
+        menu->exec(QCursor::pos());
+
+        delete action;
+        delete menu;
     });
 
     // 只有选中播放列表中的项目才允许删除，防止误触
@@ -727,6 +702,40 @@ void MainWindow::ReadVideoList() noexcept
 void MainWindow::EmitMediaListPlayerNextItemSet() noexcept
 {
     emit MediaListPlayerNextItemSet();
+}
+
+void MainWindow::AddVideo() noexcept
+{
+    auto fileNames = QFileDialog::getOpenFileNames(this, "选择媒体文件");
+    if (!fileNames.empty())
+    {
+        for (const auto &fileName : fileNames)
+        {
+            // 解决对于路径Qt使用/而libvlc只认本地规则（即\\）的问题，path即为转换后的路径
+            const auto path = QDir::toNativeSeparators(fileName);
+
+            // 当列表中没有重复项时才允许添加进去，这里做了个去重
+            if (videoListWidget->findItems(path, Qt::MatchFixedString | Qt::MatchCaseSensitive).empty())
+            {
+                // 先转为std::string，然后再使用c_str()取得const char*
+                // 注意不要连写path = toStdString().c_str()，当心变量生命周期
+                const auto stdStringPath = path.toStdString();
+                auto *videoPath = libvlc_media_new_path(vlcInstance, stdStringPath.c_str());
+                auto *item = new QListWidgetItem(path);
+                item->setToolTip(path);
+                videoListWidget->addItem(item);
+
+                libvlc_media_list_lock(videoList);
+                libvlc_media_list_add_media(videoList, videoPath);
+                libvlc_media_list_unlock(videoList);
+
+                libvlc_media_release(videoPath);
+            }
+        }
+
+        emit ShouldInitializeThumbnailToolBar();
+        emit VideoListCountChanged(videoListWidget->count());
+    }
 }
 
 void MainWindow::DeleteVideo() noexcept

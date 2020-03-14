@@ -49,7 +49,7 @@ class MainWindow : public QWidget
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    ~MainWindow() noexcept;
 
 private:
     void InitializeUi();
@@ -95,6 +95,7 @@ public slots:
     // 当点击开始/暂停按钮时的动作，需要同步主界面上和ThumbnailToolBar上按钮的状态
     void OnPlayOrPauseClicked() noexcept;
 
+    void AddVideo() noexcept;
     void DeleteVideo() noexcept;
 
 private:
