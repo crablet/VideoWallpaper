@@ -16,6 +16,11 @@ int main(int argc, char *argv[])
             // 根据MSDN文档，SetProcessDpiAwareness在Win8.1之后才存在
             SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);  // 适配高DPI
         }
+        else
+        {
+            // Win8.1之前的版本就使用这个函数作为替代高DPI适配，至于能否实现功能全凭运气
+            SetProcessDPIAware();
+        }
         MessageBox(nullptr, L"已有另一VideoWallpaper实例正在运行", L"提示", MB_ICONINFORMATION | MB_OK);
 
         return 0;
