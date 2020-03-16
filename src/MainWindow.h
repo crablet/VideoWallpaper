@@ -98,6 +98,8 @@ public slots:
     void AddVideo() noexcept;
     void DeleteVideo() noexcept;
 
+    void SetAspectRatio(const QString &ratioText) noexcept;
+
 private:
     QVBoxLayout *mainLayout;
     QHBoxLayout *modeSettingsLayout, *videoControlLayout;
