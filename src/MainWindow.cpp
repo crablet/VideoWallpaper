@@ -467,7 +467,7 @@ void MainWindow::InitializeSettings()
     }
     else    // 存在PlaybackMode配置，则根据配置情况执行
     {
-        auto playbackMode = settings->value("PlaybackMode").toString();
+        const auto playbackMode = settings->value("PlaybackMode").toString();
         if (playbackMode == "repeat")
         {
             libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_repeat);
@@ -706,7 +706,7 @@ void MainWindow::EmitMediaListPlayerNextItemSet() noexcept
 
 void MainWindow::AddVideo() noexcept
 {
-    auto fileNames = QFileDialog::getOpenFileNames(this, "选择媒体文件");
+    const auto fileNames = QFileDialog::getOpenFileNames(this, "选择媒体文件");
     if (!fileNames.empty())
     {
         for (const auto &fileName : fileNames)
