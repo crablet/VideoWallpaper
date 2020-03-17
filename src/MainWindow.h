@@ -99,6 +99,8 @@ public slots:
     void DeleteVideo() noexcept;
 
     void SetAspectRatio(const QString &ratioText) noexcept;
+    void SetPlaybackMode(const QString &mode) noexcept;
+    void SetVolume(int value) noexcept;
 
 private:
     QVBoxLayout *mainLayout;

@@ -212,47 +212,10 @@ void MainWindow::InitializeConnect()
     });
 
     // 音量条
-    connect(volumeSlider, &QSlider::sliderMoved, [=](int value)
-    {
-        auto *player = libvlc_media_list_player_get_media_player(videoPlayer);
-        libvlc_audio_set_volume(player, value);
-        libvlc_media_player_release(player);
-
-        if (value == 0) // 音量为0时记得将换成静音的图标
-        {
-            volumeButton->setIcon(QIcon(":/icons/volume-mute-fill.png"));
-        }
-        else            // 音量不为0时则换成有声音的图标（暂不处理音量小于0的情况，因为正常操作并不会出现）
-        {
-            volumeButton->setIcon(QIcon(":/icons/volume-down-fill.png"));
-        }
-
-        volumeSlider->setToolTip(QString::number(value));   // 展示当前音量
-    });
+    connect(volumeSlider, &QSlider::sliderMoved, this, &MainWindow::SetVolume);
 
     // 选择列表循环播放的模式
-    connect(modeComboBox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged), [=](const QString &currentText)
-    {
-        if (currentText == "单曲循环")
-        {
-            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_repeat);
-            settings->setValue("PlaybackMode", "repeat");
-        }
-        else if (currentText == "列表循环")
-        {
-            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_loop);
-            settings->setValue("PlaybackMode", "loop");
-        }
-        else if (currentText == "不循环")
-        {
-            libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_default);
-            settings->setValue("PlaybackMode", "default");
-        }
-        else
-        {
-            QMessageBox::information(this, "警告", "暂不支持“随机播放”");
-        }
-    });
+    connect(modeComboBox, QOverload<const QString &>::of(&QComboBox::currentIndexChanged), this, &MainWindow::SetPlaybackMode);
 
     // 删除按钮
     connect(deleteVideoButton, &QToolButton::clicked, this, &MainWindow::DeleteVideo);
@@ -785,6 +748,47 @@ void MainWindow::SetAspectRatio(const QString &ratioText) noexcept
     }
 
     libvlc_media_player_release(player);
+}
+
+void MainWindow::SetPlaybackMode(const QString &mode) noexcept
+{
+    if (mode == "单曲循环")
+    {
+        libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_repeat);
+        settings->setValue("PlaybackMode", "repeat");
+    }
+    else if (mode == "列表循环")
+    {
+        libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_loop);
+        settings->setValue("PlaybackMode", "loop");
+    }
+    else if (mode == "不循环")
+    {
+        libvlc_media_list_player_set_playback_mode(videoPlayer, libvlc_playback_mode_default);
+        settings->setValue("PlaybackMode", "default");
+    }
+    else
+    {
+        QMessageBox::information(this, "警告", "暂不支持“随机播放”");
+    }
+}
+
+void MainWindow::SetVolume(int value) noexcept
+{
+    auto *player = libvlc_media_list_player_get_media_player(videoPlayer);
+    libvlc_audio_set_volume(player, value);
+    libvlc_media_player_release(player);
+
+    if (value == 0) // 音量为0时记得将换成静音的图标
+    {
+        volumeButton->setIcon(QIcon(":/icons/volume-mute-fill.png"));
+    }
+    else            // 音量不为0时则换成有声音的图标（暂不处理音量小于0的情况，因为正常操作并不会出现）
+    {
+        volumeButton->setIcon(QIcon(":/icons/volume-down-fill.png"));
+    }
+
+    volumeSlider->setToolTip(QString::number(value));   // 展示当前音量
 }
 
 // 获取正在播放的项目的名字，使用Windows表示法
