@@ -19,6 +19,11 @@
  * libvlc.dll、libvlccore.dll和plugins文件夹可在libvlc项目文件夹或vlc安装目录下获得
  * 默认配置下仅支持64位系统，若要在32位系统下使用，请下载[libvlc3.0.8 win32版](http://download.videolan.org/pub/videolan/vlc/3.0.8/win32/vlc-3.0.8-win32.7z)然后将其中的sdk文件夹拷贝覆盖原项目中的sdk文件夹，libvlc.dll、libvlccore.dll和plugins文件夹也使用32位版的进行配置，方法同上
 
+## 问题
+ * 若在使用过程中出现问题，请先尝试删除该软件目录下的userdata文件夹并重启软件
+ * 若仍无法解决问题，完整删除本软件并重新下载新的安装包即可。本软件承诺完全绿色，除了软件自己的目录外不在任何地方释放文件，绝不污染用户的电脑和窃取用户的隐私。
+ * 若这些方法均不奏效，可邮件联系我解决问题
+
 ## 联系
  邮箱：love4uandgzfc@gmail.com
 
