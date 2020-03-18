@@ -123,7 +123,7 @@ void MainWindow::InitializeUi()
 
     ///////////////////////////////////////////////////////////
 
-    auto *exitAction = new QAction("退出", this);
+    auto *exitAction = new QAction(ExitActionText, this);
     connect(exitAction, &QAction::triggered, [=]()
     {
         qApp->quit();
@@ -781,11 +781,11 @@ void MainWindow::SetVolume(int value) noexcept
 
     if (value == 0) // 音量为0时记得将换成静音的图标
     {
-        volumeButton->setIcon(QIcon(":/icons/volume-mute-fill.png"));
+        volumeButton->setIcon(VolumeButtonIcon_MUTE);
     }
     else            // 音量不为0时则换成有声音的图标（暂不处理音量小于0的情况，因为正常操作并不会出现）
     {
-        volumeButton->setIcon(QIcon(":/icons/volume-down-fill.png"));
+        volumeButton->setIcon(VolumeButtonIcon_UNMUTE);
     }
 
     volumeSlider->setToolTip(QString::number(value));   // 展示当前音量

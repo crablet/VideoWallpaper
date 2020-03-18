@@ -19,6 +19,8 @@
 #define StopPlayingButtonIcon   QIcon(":/icons/stop-fill.png")
 #define VolumeButtonIcon        QIcon(":/icons/volume-down-fill.png")
 #define TrayIcon                QIcon(":/icons/film-fill.png")
+#define VolumeButtonIcon_MUTE   QIcon(":/icons/volume-mute-fill.png")
+#define VolumeButtonIcon_UNMUTE QIcon(":/icons/volume-down-fill.png")
 
 inline const QSize ButtonIconSize = QSize(24, 24);
 
@@ -41,6 +43,7 @@ inline const QString PlayPreviousButtonText = "上一个";
 inline const QString StopPlayingButtonText = "停止";
 inline const QString PlayNextButtonText = "下一个";
 inline const QString VolumeButtonText = "静音";
+inline const QString ExitActionText = "退出";
 
 inline constexpr const char *VideoListPath = "userdata/videolist";
 inline constexpr const char *RunAtStartupRegPath = R"(HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run)";
