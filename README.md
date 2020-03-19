@@ -8,6 +8,7 @@
  使用该软件可以将Windows桌面壁纸更换成您喜欢的动图、视频等多媒体文件。软件使用libvlc作为后端解码，理论上能支持所有能使用vlc播放器播放的多媒体文件。
 
 ## 下载
+ * [官方下载](https://github.com/crablet/VideoWallpaper/releases)
  * [备用地址](https://pan.baidu.com/s/1970WzJKsXA8YAg03Z1SR8Q) 提取码：343c
  * 下载VideoWallpaper.7z解压后双击VideoWallpaper.exe即可使用，如果无法打开则需下载vc_redist.x64.7z解压后双击安装VC运行库
  * 软件处于早期开发阶段，编译好的二进制文件的发布可能略有延迟，若想体验最新版可以根据下面的编译教程自行编译体验。
