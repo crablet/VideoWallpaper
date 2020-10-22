@@ -27,8 +27,11 @@ HEADERS += \
     src/WindowsTools.h
 
 LIBS += \
-    sdk/lib/libvlc.lib \
-    sdk/lib/libvlccore.lib
+    -L$$PWD/sdk/lib \
+    -llibvlc \
+    -llibvlccore \
+
+win32:LIBS += -luser32
 
 INCLUDEPATH += \
     sdk/include
